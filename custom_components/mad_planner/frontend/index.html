@@ -69,9 +69,12 @@
   textarea { resize: vertical; min-height: 80px; }
 
   /* Tag input */
-  .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; min-height: 48px; cursor: text; transition: border-color 0.2s; }
+  .tag-input-outer { display: flex; gap: 8px; align-items: flex-start; }
+  .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; min-height: 48px; cursor: text; transition: border-color 0.2s; flex: 1; }
   .tag-input-wrap:focus-within { border-color: var(--accent); }
-  .tag-input-wrap input { background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-width: 140px; flex: 1; padding: 4px; }
+  .tag-input-wrap input { background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-width: 100px; flex: 1; padding: 4px; }
+  .tag-add-btn { background: var(--accent); border: none; color: #0f0e0c; border-radius: 10px; padding: 0 16px; height: 48px; font-size: 20px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.2s; line-height: 1; }
+  .tag-add-btn:hover { background: var(--accent2); }
   .tag-pill { background: var(--tag-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px 4px 12px; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
   .tag-pill.kat { border-color: var(--accent2); }
   .tag-pill button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; transition: color 0.2s; }
@@ -186,18 +189,32 @@ function toast(msg, err=false) {
 // ── Tag Input Component ───────────────────────────────────────────────
 function createTagInput(id, placeholder, kategori=false) {
   let tags = [];
+
+  const outer = document.createElement('div');
+  outer.className = 'tag-input-outer';
+
   const wrap = document.createElement('div');
   wrap.className = 'tag-input-wrap';
+
   const inp = document.createElement('input');
   inp.type = 'text';
   inp.placeholder = placeholder;
+  inp.inputMode = 'text';
+  inp.setAttribute('enterkeyhint', 'done');
+
+  function addCurrent() {
+    const val = inp.value.trim().replace(/,$/, '');
+    if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+    inp.value = '';
+    inp.focus();
+  }
 
   function renderTags() {
     wrap.querySelectorAll('.tag-pill').forEach(e => e.remove());
     tags.forEach((tag, i) => {
       const pill = document.createElement('span');
       pill.className = 'tag-pill' + (kategori ? ' kat' : '');
-      pill.innerHTML = `${tag} <button onclick="void(0)">×</button>`;
+      pill.innerHTML = `${tag} <button type="button">×</button>`;
       pill.querySelector('button').onclick = () => { tags.splice(i, 1); renderTags(); };
       wrap.insertBefore(pill, inp);
     });
@@ -206,18 +223,32 @@ function createTagInput(id, placeholder, kategori=false) {
   inp.addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.key === ',') && inp.value.trim()) {
       e.preventDefault();
-      const val = inp.value.trim().replace(/,$/, '');
-      if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
-      inp.value = '';
+      addCurrent();
     } else if (e.key === 'Backspace' && !inp.value && tags.length) {
       tags.pop(); renderTags();
     }
   });
 
+  // Also catch mobile "Go"/"Done" via input event after enter on virtual keyboard
+  inp.addEventListener('keyup', e => {
+    if (e.key === 'Enter' && inp.value.trim()) { addCurrent(); }
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'tag-add-btn';
+  addBtn.textContent = '+';
+  addBtn.title = 'Tilføj';
+  addBtn.onclick = () => { if (inp.value.trim()) addCurrent(); };
+
   wrap.appendChild(inp);
-  wrap._getTags = () => tags;
-  wrap._setTags = (newTags) => { tags = [...newTags]; renderTags(); };
-  return wrap;
+  outer.appendChild(wrap);
+  outer.appendChild(addBtn);
+
+  // Expose API on the outer element
+  outer._getTags = () => tags;
+  outer._setTags = (newTags) => { tags = [...newTags]; renderTags(); };
+  return outer;
 }
 
 // ── Pages ─────────────────────────────────────────────────────────────
