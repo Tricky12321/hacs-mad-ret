@@ -1,0 +1,12 @@
+{
+  "domain": "mad_planner",
+  "name": "Mad Planner",
+  "version": "1.0.0",
+  "documentation": "https://github.com/your-username/mad_planner",
+  "issue_tracker": "https://github.com/your-username/mad_planner/issues",
+  "dependencies": [],
+  "codeowners": ["@your-username"],
+  "requirements": [],
+  "iot_class": "local_push",
+  "config_flow": true
+}

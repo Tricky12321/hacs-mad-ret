@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Opsæt Mad Planner",
+        "description": "Tilføj Mad Planner til dit Home Assistant setup."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Mad Planner er allerede opsat."
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Mad Planner",
+  "description": "Planlæg dine madretter med ingredienser og kategorier direkte i Home Assistant",
+  "render_readme": true,
+  "domains": ["mad_planner"],
+  "homeassistant": "2023.1.0"
+}
