@@ -51,8 +51,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.http.register_view(MadPlannerRetView(hass))
     hass.http.register_view(MadPlannerSoegView(hass))
 
-    # Register the frontend panel
-    hass.components.frontend.async_register_built_in_panel(
+    # Register static files for the frontend
+    frontend_path = Path(__file__).parent / "frontend"
+    try:
+        from homeassistant.components.http import StaticPathConfig
+        await hass.http.async_register_static_paths([
+            StaticPathConfig("/mad_planner_static", str(frontend_path), False)
+        ])
+    except Exception:
+        # Fallback for older HA versions
+        hass.http.register_static_path("/mad_planner_static", str(frontend_path), False)
+
+    # Register the frontend panel using the correct modern API
+    from homeassistant.components import frontend
+    frontend.async_register_built_in_panel(
+        hass,
         component_name="iframe",
         sidebar_title="Mad Planner",
         sidebar_icon="mdi:food-fork-drink",
@@ -177,14 +190,3 @@ class MadPlannerSoegView(HomeAssistantView):
         return self.json(resultater)
 
 
-async def async_setup_static(hass: HomeAssistant) -> None:
-    """Register static files."""
-    from pathlib import Path
-    frontend_path = Path(__file__).parent / "frontend"
-    try:
-        from homeassistant.components.http import StaticPathConfig
-        await hass.http.async_register_static_paths([
-            StaticPathConfig("/mad_planner_static", str(frontend_path), False)
-        ])
-    except Exception:
-        pass
