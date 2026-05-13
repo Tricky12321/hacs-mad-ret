@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import uuid
 from pathlib import Path
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -13,7 +12,6 @@ from homeassistant.components.http import HomeAssistantView
 from aiohttp import web
 
 _LOGGER = logging.getLogger(__name__)
-
 DOMAIN = "mad_planner"
 DATA_FILE = "mad_planner_data.json"
 
@@ -26,8 +24,11 @@ def load_data(hass: HomeAssistant) -> dict:
     path = get_data_path(hass)
     if path.exists():
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"retter": []}
+            data = json.load(f)
+            data.setdefault("retter", [])
+            data.setdefault("personer", [])
+            return data
+    return {"retter": [], "personer": []}
 
 
 def save_data(hass: HomeAssistant, data: dict) -> None:
@@ -37,19 +38,19 @@ def save_data(hass: HomeAssistant, data: dict) -> None:
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the Mad Planner component."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Mad Planner from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     # Register API views
     hass.http.register_view(MadPlannerRetterView(hass))
     hass.http.register_view(MadPlannerRetView(hass))
     hass.http.register_view(MadPlannerSoegView(hass))
+    hass.http.register_view(MadPlannerPersonerView(hass))
+    hass.http.register_view(MadPlannerPersonView(hass))
 
     # Register static files for the frontend
     frontend_path = Path(__file__).parent / "frontend"
@@ -59,10 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             StaticPathConfig("/mad_planner_static", str(frontend_path), False)
         ])
     except Exception:
-        # Fallback for older HA versions
         hass.http.register_static_path("/mad_planner_static", str(frontend_path), False)
 
-    # Register the frontend panel using the correct modern API
+    # Register the frontend panel
     from homeassistant.components import frontend
     frontend.async_register_built_in_panel(
         hass,
@@ -73,21 +73,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config={"url": "/mad_planner_static/index.html"},
         require_admin=False,
     )
-
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
     return True
 
 
-class MadPlannerRetterView(HomeAssistantView):
-    """View to handle listing and creating retter."""
+# ── Retter ────────────────────────────────────────────────────────────
 
+class MadPlannerRetterView(HomeAssistantView):
     url = "/api/mad_planner/retter"
     name = "api:mad_planner:retter"
-    requires_auth = True
+    requires_auth = False
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -99,14 +97,13 @@ class MadPlannerRetterView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         body = await request.json()
         data = await self.hass.async_add_executor_job(load_data, self.hass)
-
-        import uuid
         ret = {
             "id": str(uuid.uuid4()),
             "navn": body.get("navn", ""),
             "ingredienser": body.get("ingredienser", []),
             "kategorier": body.get("kategorier", []),
             "beskrivelse": body.get("beskrivelse", ""),
+            "personer": body.get("personer", []),
         }
         data["retter"].append(ret)
         await self.hass.async_add_executor_job(save_data, self.hass, data)
@@ -114,11 +111,9 @@ class MadPlannerRetterView(HomeAssistantView):
 
 
 class MadPlannerRetView(HomeAssistantView):
-    """View to handle single ret operations."""
-
     url = "/api/mad_planner/retter/{ret_id}"
     name = "api:mad_planner:ret"
-    requires_auth = True
+    requires_auth = False
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -126,7 +121,6 @@ class MadPlannerRetView(HomeAssistantView):
     async def put(self, request: web.Request, ret_id: str) -> web.Response:
         body = await request.json()
         data = await self.hass.async_add_executor_job(load_data, self.hass)
-
         for i, ret in enumerate(data["retter"]):
             if ret["id"] == ret_id:
                 data["retter"][i] = {
@@ -135,58 +129,106 @@ class MadPlannerRetView(HomeAssistantView):
                     "ingredienser": body.get("ingredienser", ret["ingredienser"]),
                     "kategorier": body.get("kategorier", ret["kategorier"]),
                     "beskrivelse": body.get("beskrivelse", ret.get("beskrivelse", "")),
+                    "personer": body.get("personer", ret.get("personer", [])),
                 }
                 await self.hass.async_add_executor_job(save_data, self.hass, data)
                 return self.json(data["retter"][i])
-
         return self.json({"error": "Ikke fundet"}, status_code=404)
 
     async def delete(self, request: web.Request, ret_id: str) -> web.Response:
         data = await self.hass.async_add_executor_job(load_data, self.hass)
-        original_len = len(data["retter"])
+        orig = len(data["retter"])
         data["retter"] = [r for r in data["retter"] if r["id"] != ret_id]
-
-        if len(data["retter"]) == original_len:
+        if len(data["retter"]) == orig:
             return self.json({"error": "Ikke fundet"}, status_code=404)
-
         await self.hass.async_add_executor_job(save_data, self.hass, data)
         return self.json({"success": True})
 
 
-class MadPlannerSoegView(HomeAssistantView):
-    """View to search/filter retter by ingredients and categories."""
+# ── Søg ───────────────────────────────────────────────────────────────
 
+class MadPlannerSoegView(HomeAssistantView):
     url = "/api/mad_planner/soeg"
     name = "api:mad_planner:soeg"
-    requires_auth = True
+    requires_auth = False
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
 
     async def post(self, request: web.Request) -> web.Response:
         body = await request.json()
-        soeg_ingredienser = [i.lower().strip() for i in body.get("ingredienser", [])]
-        soeg_kategorier = [k.lower().strip() for k in body.get("kategorier", [])]
+        soeg_ing = [i.lower().strip() for i in body.get("ingredienser", [])]
+        soeg_kat = [k.lower().strip() for k in body.get("kategorier", [])]
+        soeg_personer = body.get("personer", [])
 
         data = await self.hass.async_add_executor_job(load_data, self.hass)
         resultater = []
+        has_filter = bool(soeg_ing or soeg_kat or soeg_personer)
 
         for ret in data["retter"]:
             ret_ing = [i.lower().strip() for i in ret.get("ingredienser", [])]
             ret_kat = [k.lower().strip() for k in ret.get("kategorier", [])]
+            ret_per = ret.get("personer", [])
 
-            ing_matches = sum(1 for i in soeg_ingredienser if any(i in ri or ri in i for ri in ret_ing))
-            kat_matches = sum(1 for k in soeg_kategorier if k in ret_kat)
-            total_matches = ing_matches + kat_matches
+            ing_matches = sum(1 for i in soeg_ing if any(i in ri or ri in i for ri in ret_ing))
+            kat_matches = sum(1 for k in soeg_kat if k in ret_kat)
+            per_matches = sum(1 for pid in soeg_personer if pid in ret_per)
+            total = ing_matches + kat_matches + per_matches
 
-            # Include all if no filters, otherwise only those with at least 1 match
-            if not soeg_ingredienser and not soeg_kategorier:
-                total_matches = 0  # Show all
+            if not has_filter:
                 resultater.append({**ret, "matches": 0})
-            elif total_matches > 0:
-                resultater.append({**ret, "matches": total_matches, "ing_matches": ing_matches, "kat_matches": kat_matches})
+            elif total > 0:
+                resultater.append({**ret, "matches": total})
 
         resultater.sort(key=lambda x: x.get("matches", 0), reverse=True)
         return self.json(resultater)
 
 
+# ── Personer ──────────────────────────────────────────────────────────
+
+class MadPlannerPersonerView(HomeAssistantView):
+    url = "/api/mad_planner/personer"
+    name = "api:mad_planner:personer"
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+
+    async def get(self, request: web.Request) -> web.Response:
+        data = await self.hass.async_add_executor_job(load_data, self.hass)
+        return self.json(data["personer"])
+
+    async def post(self, request: web.Request) -> web.Response:
+        body = await request.json()
+        data = await self.hass.async_add_executor_job(load_data, self.hass)
+        person = {
+            "id": str(uuid.uuid4()),
+            "navn": body.get("navn", "").strip(),
+        }
+        if not person["navn"]:
+            return self.json({"error": "Navn mangler"}, status_code=400)
+        data["personer"].append(person)
+        await self.hass.async_add_executor_job(save_data, self.hass, data)
+        return self.json(person, status_code=201)
+
+
+class MadPlannerPersonView(HomeAssistantView):
+    url = "/api/mad_planner/personer/{person_id}"
+    name = "api:mad_planner:person"
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+
+    async def delete(self, request: web.Request, person_id: str) -> web.Response:
+        data = await self.hass.async_add_executor_job(load_data, self.hass)
+        orig = len(data["personer"])
+        data["personer"] = [p for p in data["personer"] if p["id"] != person_id]
+        if len(data["personer"]) == orig:
+            return self.json({"error": "Ikke fundet"}, status_code=404)
+        # Remove person from all retter
+        for ret in data["retter"]:
+            if person_id in ret.get("personer", []):
+                ret["personer"] = [p for p in ret["personer"] if p != person_id]
+        await self.hass.async_add_executor_job(save_data, self.hass, data)
+        return self.json({"success": True})
