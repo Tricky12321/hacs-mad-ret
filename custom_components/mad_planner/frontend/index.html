@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mad Planner</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
     --bg: #0f0e0c;
@@ -20,141 +19,131 @@
     --tag-bg: #2a2218;
     --person-color: #4a9fd4;
     --person-border: #2a6f9a;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; }
 
-  /* Layout */
-  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 32px 20px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-  .main { padding: 40px 48px; overflow-y: auto; }
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .main { padding: 36px 44px; overflow-y: auto; }
 
-  /* Sidebar */
-  .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: var(--accent); margin-bottom: 28px; display: flex; align-items: center; gap: 10px; }
-  .logo span { font-size: 28px; }
-  .nav-btn { background: none; border: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 14px; border-radius: 10px; cursor: pointer; text-align: left; width: 100%; transition: all 0.2s; display: flex; align-items: center; gap: 10px; letter-spacing: 0.3px; }
+  .logo { font-family: var(--serif); font-size: 20px; font-weight: 900; color: var(--accent); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+  .logo span { font-size: 26px; }
+  .nav-btn { background: none; border: none; color: var(--text-muted); font-family: var(--sans); font-size: 14px; font-weight: 500; padding: 10px 14px; border-radius: 10px; cursor: pointer; text-align: left; width: 100%; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
   .nav-btn:hover { background: var(--surface2); color: var(--text); }
   .nav-btn.active { background: var(--accent); color: #0f0e0c; font-weight: 700; }
-  .nav-btn .icon { font-size: 18px; min-width: 22px; }
-  .sidebar-sep { height: 1px; background: var(--border); margin: 10px 0; }
+  .nav-btn .icon { font-size: 17px; min-width: 20px; }
+  .sidebar-sep { height: 1px; background: var(--border); margin: 8px 0; }
 
-  /* Header */
-  .page-header { margin-bottom: 36px; }
-  .page-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900; color: var(--accent); }
-  .page-sub { color: var(--text-muted); margin-top: 6px; font-size: 14px; }
+  .page-header { margin-bottom: 32px; }
+  .page-title { font-family: var(--serif); font-size: 32px; font-weight: 900; color: var(--accent); }
+  .page-sub { color: var(--text-muted); margin-top: 5px; font-size: 14px; }
 
-  /* Cards grid */
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
   .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0; transition: opacity 0.2s; }
-  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
   .card:hover::before { opacity: 1; }
-  .card-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
-  .card-desc { color: var(--text-muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; min-height: 20px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { background: var(--tag-bg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 12px; color: var(--text-muted); }
+  .card-name { font-family: var(--serif); font-size: 19px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .card-desc { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; line-height: 1.5; min-height: 18px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { background: var(--tag-bg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: 12px; color: var(--text-muted); }
   .tag.kat { border-color: var(--accent2); color: var(--accent); }
   .tag.person { border-color: var(--person-border); color: var(--person-color); background: #111e28; }
-  .card-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-  .btn-sm { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .card-actions { display: flex; gap: 7px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .btn-sm { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 5px 12px; border-radius: 7px; cursor: pointer; font-size: 12px; font-family: var(--sans); transition: all 0.15s; }
   .btn-sm:hover { background: var(--surface2); color: var(--text); }
   .btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
-  .match-badge { position: absolute; top: 14px; right: 14px; background: var(--accent); color: #0f0e0c; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+  .match-badge { position: absolute; top: 13px; right: 13px; background: var(--accent); color: #0f0e0c; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; }
 
-  /* Form panel */
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; max-width: 700px; }
-  .form-group { margin-bottom: 22px; }
-  label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.8px; }
-  input[type="text"], textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; transition: border-color 0.2s; outline: none; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; max-width: 680px; }
+  .form-group { margin-bottom: 20px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.8px; }
+  input[type="text"], textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 11px 15px; color: var(--text); font-family: var(--sans); font-size: 15px; transition: border-color 0.15s; outline: none; }
   input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
-  textarea { resize: vertical; min-height: 80px; }
+  textarea { resize: vertical; min-height: 76px; }
 
   /* Smart tag input */
   .tag-field-wrap { flex: 1; position: relative; }
-  .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; min-height: 48px; cursor: text; transition: border-color 0.2s; }
+  .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 7px 9px; min-height: 46px; cursor: text; transition: border-color 0.15s; }
   .tag-input-wrap:focus-within { border-color: var(--accent); }
-  .tag-input-wrap input { background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-width: 100px; flex: 1; padding: 4px; }
-  .tag-add-btn { background: var(--accent); border: none; color: #0f0e0c; border-radius: 10px; padding: 0 16px; height: 48px; font-size: 20px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.2s; line-height: 1; align-self: flex-start; }
+  .tag-input-wrap input { background: none; border: none; outline: none; color: var(--text); font-family: var(--sans); font-size: 14px; min-width: 100px; flex: 1; padding: 3px; }
+  .tag-outer { display: flex; gap: 8px; align-items: flex-start; }
+  .tag-add-btn { background: var(--accent); border: none; color: #0f0e0c; border-radius: 9px; padding: 0 15px; height: 46px; font-size: 20px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.15s; line-height: 1; }
   .tag-add-btn:hover { background: var(--accent2); }
-  .tag-pill { background: var(--tag-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px 4px 12px; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .tag-pill { background: var(--tag-bg); border: 1px solid var(--border); border-radius: 5px; padding: 3px 7px 3px 10px; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 5px; }
   .tag-pill.kat { border-color: var(--accent2); }
-  .tag-pill button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; transition: color 0.2s; }
+  .tag-pill button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; transition: color 0.15s; }
   .tag-pill button:hover { color: var(--red); }
 
-  /* Dropdown suggestions */
-  .tag-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; }
-  .tag-suggestion-item { padding: 10px 16px; cursor: pointer; font-size: 14px; transition: background 0.15s; display: flex; align-items: center; justify-content: space-between; }
-  .tag-suggestion-item:hover, .tag-suggestion-item.focused { background: var(--surface2); }
-  .tag-suggestion-item .sug-count { font-size: 11px; color: var(--text-muted); }
-  .tag-suggestion-new { color: var(--accent); }
+  /* Suggestions dropdown */
+  .tag-suggestions { position: absolute; top: calc(100% + 3px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; }
+  .tag-sug-item { padding: 9px 15px; cursor: pointer; font-size: 14px; transition: background 0.12s; display: flex; align-items: center; justify-content: space-between; }
+  .tag-sug-item:hover, .tag-sug-item.focused { background: var(--surface2); }
+  .tag-sug-item .sug-count { font-size: 11px; color: var(--text-muted); }
+  .tag-sug-new { color: var(--accent); }
 
   /* Person chips */
   .person-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .person-chip { background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 8px 16px; cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; gap: 8px; user-select: none; }
+  .person-chip { background: var(--surface2); border: 2px solid var(--border); border-radius: 9px; padding: 7px 14px; cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.15s; display: flex; align-items: center; gap: 7px; user-select: none; }
   .person-chip:hover { border-color: var(--person-border); color: var(--person-color); }
   .person-chip.selected { background: #111e28; border-color: var(--person-border); color: var(--person-color); font-weight: 600; }
-  .person-chip .check { opacity: 0; transition: opacity 0.15s; }
+  .person-chip .check { opacity: 0; transition: opacity 0.12s; font-size: 13px; }
   .person-chip.selected .check { opacity: 1; }
-  .person-chip-empty { color: var(--text-muted); font-size: 13px; font-style: italic; padding: 8px 0; }
-
-  /* Person page */
-  .person-list { display: flex; flex-direction: column; gap: 10px; }
-  .person-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
-  .person-row-name { display: flex; align-items: center; gap: 12px; }
-  .person-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--person-border); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-  .person-name-block .name { font-size: 15px; font-weight: 500; }
-  .person-name-block .meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .person-row-actions { display: flex; gap: 6px; }
+  .person-chip-empty { color: var(--text-muted); font-size: 13px; font-style: italic; }
 
   /* Person search chips */
   .person-search-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .person-search-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--text-muted); transition: all 0.2s; user-select: none; }
+  .person-search-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--text-muted); transition: all 0.15s; user-select: none; }
   .person-search-chip:hover { border-color: var(--person-border); color: var(--person-color); }
   .person-search-chip.selected { background: #111e28; border-color: var(--person-border); color: var(--person-color); font-weight: 600; }
 
-  /* Buttons */
-  .btn { background: var(--accent); color: #0f0e0c; border: none; border-radius: 10px; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  /* Person list */
+  .person-list { display: flex; flex-direction: column; gap: 9px; }
+  .person-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 11px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .person-row-left { display: flex; align-items: center; gap: 11px; }
+  .person-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--person-border); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .person-name { font-size: 15px; font-weight: 500; }
+  .person-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  .btn { background: var(--accent); color: #0f0e0c; border: none; border-radius: 9px; padding: 11px 26px; font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
   .btn:hover { background: var(--accent2); transform: translateY(-1px); }
   .btn.secondary { background: none; border: 1px solid var(--border); color: var(--text-muted); }
   .btn.secondary:hover { border-color: var(--text-muted); color: var(--text); transform: none; }
-  .btn-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .btn-row { display: flex; gap: 10px; margin-top: 26px; flex-wrap: wrap; }
 
-  /* Search section */
-  .search-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 32px; }
-  .search-bar h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--accent); margin-bottom: 18px; }
-  .search-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .search-action { margin-top: 18px; display: flex; gap: 12px; align-items: center; }
+  .search-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 28px; }
+  .search-bar h3 { font-family: var(--serif); font-size: 17px; color: var(--accent); margin-bottom: 16px; }
+  .search-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .search-action { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
 
-  /* Inline add */
-  .inline-add { display: flex; gap: 8px; margin-top: 12px; }
+  .inline-add { display: flex; gap: 8px; margin-top: 10px; }
   .inline-add input { flex: 1; }
 
-  /* Empty state */
-  .empty { text-align: center; padding: 80px 20px; color: var(--text-muted); }
-  .empty .em-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.4; }
-  .empty p { font-size: 16px; }
+  .empty { text-align: center; padding: 70px 20px; color: var(--text-muted); }
+  .empty .em-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.35; }
+  .empty p { font-size: 15px; }
 
-  /* Modal */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
-  .modal h2 { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--accent); margin-bottom: 6px; }
-  .modal-body { margin-top: 20px; }
-  .detail-section { margin-bottom: 20px; }
-  .detail-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 10px; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-family: var(--serif); font-size: 23px; color: var(--accent); margin-bottom: 5px; }
+  .modal-body { margin-top: 18px; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 9px; }
   .detail-section p { color: var(--text); line-height: 1.6; }
-  .ing-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ing-list { display: flex; flex-wrap: wrap; gap: 5px; }
 
-  /* Toast */
-  .toast { position: fixed; bottom: 28px; right: 28px; background: var(--green); color: white; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 200; animation: fadeIn 0.3s; }
+  .toast { position: fixed; bottom: 26px; right: 26px; background: var(--green); color: white; padding: 11px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; z-index: 200; animation: fadeIn 0.25s; }
   .toast.err { background: var(--red); }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* Responsive */
   @media (max-width: 768px) {
     .app { grid-template-columns: 1fr; }
-    .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 16px; gap: 4px; }
-    .logo { margin-bottom: 0; font-size: 18px; width: 100%; }
-    .main { padding: 24px 16px; }
+    .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; padding: 14px; gap: 4px; }
+    .logo { margin-bottom: 0; font-size: 17px; width: 100%; }
+    .main { padding: 20px 14px; }
     .search-row { grid-template-columns: 1fr; }
   }
 </style>
@@ -173,12 +162,11 @@
   <main class="main" id="main-content"></main>
 </div>
 
-<!-- Detail Modal -->
 <div id="modal" class="modal-backdrop" style="display:none" onclick="closeModal(event)">
-  <div class="modal" id="modal-inner">
+  <div class="modal">
     <h2 id="modal-name"></h2>
     <div class="modal-body" id="modal-body"></div>
-    <div class="btn-row" style="margin-top:24px">
+    <div class="btn-row" style="margin-top:22px">
       <button class="btn secondary" onclick="closeModal()">Luk</button>
       <button class="btn secondary" id="modal-edit-btn">Rediger</button>
       <button class="btn secondary" id="modal-del-btn" style="border-color:#c0503a;color:#c0503a">Slet</button>
@@ -190,43 +178,24 @@
 // ── State ─────────────────────────────────────────────────────────────
 let retter = [];
 let personer = [];
-let currentPage = 'soeg';
+let currentPage = 'soeg';  // 'soeg' | 'alle' | 'ny' | 'rediger' | 'personer'
 let editingId = null;
-let currentModalId = null;
-let _haToken = null;
 let soegPersonIds = [];
 
-// ── Auth ──────────────────────────────────────────────────────────────
-function haToken() {
-  if (_haToken) return _haToken;
-  return new URLSearchParams(window.location.search).get('token') || '';
-}
-window.addEventListener('message', e => {
-  if (e.data?.type === 'auth/result' && e.data.result?.access_token) _haToken = e.data.result.access_token;
-  if (e.data?.access_token) _haToken = e.data.access_token;
-});
-function requestHAAuth() { try { window.parent.postMessage({ type: 'get_external_auth' }, '*'); } catch(e) {} }
-async function waitForToken(timeout=3000) {
-  if (haToken()) return haToken();
-  requestHAAuth();
-  return new Promise(resolve => {
-    const start = Date.now();
-    const check = setInterval(() => {
-      if (_haToken || Date.now()-start > timeout) { clearInterval(check); resolve(_haToken||''); }
-    }, 50);
-  });
-}
+// ── API — ingen token-ventetid da requires_auth = False ───────────────
 async function api(method, path, body) {
-  const token = await waitForToken();
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch('/api/mad_planner' + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch('/api/mad_planner' + path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function toast(msg, err=false) {
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : '');
@@ -234,7 +203,10 @@ function toast(msg, err=false) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
-function initials(navn) { return navn.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2) || '?'; }
+
+function initials(navn) {
+  return navn.trim().split(/\s+/).map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+}
 
 // ── Derived data ──────────────────────────────────────────────────────
 function getAllKategorier() {
@@ -254,7 +226,7 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   let focusedIdx = -1;
 
   const outer = document.createElement('div');
-  outer.style.cssText = 'display:flex;gap:8px;align-items:flex-start;';
+  outer.className = 'tag-outer';
 
   const fieldWrap = document.createElement('div');
   fieldWrap.className = 'tag-field-wrap';
@@ -274,25 +246,25 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
 
   function getFiltered(q) {
     if (!getSuggestions) return [];
-    return getSuggestions().filter(s => s.value.toLowerCase().includes(q.toLowerCase()) && !tags.includes(s.value)).slice(0,8);
+    return getSuggestions().filter(s => s.value.toLowerCase().includes(q.toLowerCase()) && !tags.includes(s.value)).slice(0, 8);
   }
 
   function showSuggestions(q) {
     const items = getFiltered(q);
-    const hasNew = q.trim() && !tags.includes(q.trim()) && !items.find(i=>i.value===q.trim());
-    if (!items.length && !hasNew) { suggBox.style.display='none'; return; }
+    const hasNew = q.trim() && !tags.includes(q.trim()) && !items.find(i => i.value === q.trim());
+    if (!items.length && !hasNew) { suggBox.style.display = 'none'; return; }
     focusedIdx = -1;
     suggBox.innerHTML = '';
     items.forEach(s => {
       const d = document.createElement('div');
-      d.className = 'tag-suggestion-item';
+      d.className = 'tag-sug-item';
       d.innerHTML = `<span>${esc(s.value)}</span><span class="sug-count">brugt ${s.count}×</span>`;
       d.onmousedown = e => { e.preventDefault(); addTag(s.value); };
       suggBox.appendChild(d);
     });
     if (hasNew) {
       const d = document.createElement('div');
-      d.className = 'tag-suggestion-item tag-suggestion-new';
+      d.className = 'tag-sug-item tag-sug-new';
       d.innerHTML = `<span>+ Tilføj "<strong>${esc(q.trim())}</strong>"</span>`;
       d.onmousedown = e => { e.preventDefault(); addTag(q.trim()); };
       suggBox.appendChild(d);
@@ -300,7 +272,7 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
     suggBox.style.display = 'block';
   }
 
-  function hideSuggestions() { suggBox.style.display='none'; focusedIdx=-1; }
+  function hideSuggestions() { suggBox.style.display = 'none'; focusedIdx = -1; }
 
   function addTag(val) {
     val = val.trim();
@@ -311,12 +283,12 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   }
 
   function renderTags() {
-    wrap.querySelectorAll('.tag-pill').forEach(e=>e.remove());
+    wrap.querySelectorAll('.tag-pill').forEach(e => e.remove());
     tags.forEach((tag, i) => {
       const pill = document.createElement('span');
       pill.className = 'tag-pill' + (isKat ? ' kat' : '');
       pill.innerHTML = `${esc(tag)} <button type="button">×</button>`;
-      pill.querySelector('button').onclick = () => { tags.splice(i,1); renderTags(); };
+      pill.querySelector('button').onclick = () => { tags.splice(i, 1); renderTags(); };
       wrap.insertBefore(pill, inp);
     });
   }
@@ -325,13 +297,27 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   inp.addEventListener('focus', () => { if (getSuggestions) showSuggestions(inp.value); });
   inp.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
   inp.addEventListener('keydown', e => {
-    const items = suggBox.querySelectorAll('.tag-suggestion-item');
-    if (e.key === 'ArrowDown') { e.preventDefault(); focusedIdx=Math.min(focusedIdx+1,items.length-1); items.forEach((el,i)=>el.classList.toggle('focused',i===focusedIdx)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); focusedIdx=Math.max(focusedIdx-1,0); items.forEach((el,i)=>el.classList.toggle('focused',i===focusedIdx)); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (focusedIdx>=0&&items[focusedIdx]) items[focusedIdx].onmousedown({preventDefault:()=>{}}); else if (inp.value.trim()) addTag(inp.value); }
-    else if (e.key === ',' && inp.value.trim()) { e.preventDefault(); addTag(inp.value.replace(/,$/,'')); }
-    else if (e.key === 'Backspace' && !inp.value && tags.length) { tags.pop(); renderTags(); }
-    else if (e.key === 'Escape') hideSuggestions();
+    const items = suggBox.querySelectorAll('.tag-sug-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusedIdx = Math.min(focusedIdx+1, items.length-1);
+      items.forEach((el,i) => el.classList.toggle('focused', i===focusedIdx));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusedIdx = Math.max(focusedIdx-1, 0);
+      items.forEach((el,i) => el.classList.toggle('focused', i===focusedIdx));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focusedIdx >= 0 && items[focusedIdx]) items[focusedIdx].onmousedown({ preventDefault: ()=>{} });
+      else if (inp.value.trim()) addTag(inp.value);
+    } else if (e.key === ',' && inp.value.trim()) {
+      e.preventDefault();
+      addTag(inp.value.replace(/,$/, ''));
+    } else if (e.key === 'Backspace' && !inp.value && tags.length) {
+      tags.pop(); renderTags();
+    } else if (e.key === 'Escape') {
+      hideSuggestions();
+    }
   });
 
   const addBtn = document.createElement('button');
@@ -339,7 +325,10 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   addBtn.className = 'tag-add-btn';
   addBtn.textContent = '+';
   addBtn.title = 'Tilføj';
-  addBtn.onclick = () => { if (inp.value.trim()) addTag(inp.value); else { inp.focus(); showSuggestions(''); } };
+  addBtn.onclick = () => {
+    if (inp.value.trim()) addTag(inp.value);
+    else { inp.focus(); if (getSuggestions) showSuggestions(''); }
+  };
 
   wrap.appendChild(inp);
   fieldWrap.appendChild(wrap);
@@ -348,11 +337,11 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   outer.appendChild(addBtn);
 
   outer._getTags = () => tags;
-  outer._setTags = (t) => { tags = [...t]; renderTags(); };
+  outer._setTags = t => { tags = [...t]; renderTags(); };
   return outer;
 }
 
-// ── Person picker (form) ──────────────────────────────────────────────
+// ── Person picker ─────────────────────────────────────────────────────
 function createPersonPicker(selectedIds=[]) {
   let selected = [...selectedIds];
   const wrap = document.createElement('div');
@@ -370,24 +359,28 @@ function createPersonPicker(selectedIds=[]) {
       chip.className = 'person-chip' + (selected.includes(p.id) ? ' selected' : '');
       chip.innerHTML = `<span>${esc(p.navn)}</span><span class="check">✓</span>`;
       chip.onclick = () => {
-        if (selected.includes(p.id)) selected = selected.filter(id=>id!==p.id);
-        else selected.push(p.id);
+        selected = selected.includes(p.id) ? selected.filter(id => id !== p.id) : [...selected, p.id];
         render();
       };
       chips.appendChild(chip);
     });
     wrap.appendChild(chips);
   }
+
   render();
   wrap._getSelected = () => selected;
-  wrap._setSelected = (ids) => { selected=[...ids]; render(); };
+  wrap._setSelected = ids => { selected = [...ids]; render(); };
   return wrap;
 }
 
-// ── Load data ─────────────────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────────────────
 async function loadAll() {
-  try { retter = await api('GET', '/retter'); } catch(e) { retter = []; }
-  try { personer = await api('GET', '/personer'); } catch(e) { personer = []; }
+  const [r, p] = await Promise.all([
+    api('GET', '/retter').catch(() => []),
+    api('GET', '/personer').catch(() => []),
+  ]);
+  retter = r;
+  personer = p;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────
@@ -395,43 +388,34 @@ function showPage(page) {
   currentPage = page;
   editingId = null;
   if (page === 'soeg') soegPersonIds = [];
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const btn = document.getElementById('nav-'+page);
-  if (btn) btn.classList.add('active');
+  updateNav();
   render();
 }
 
-// ── Cards ─────────────────────────────────────────────────────────────
-function renderCards(list, showMatch=false) {
-  if (!list.length) return `<div class="empty"><div class="em-icon">🥄</div><p>Ingen retter fundet</p></div>`;
-  return `<div class="cards-grid">${list.map(ret => {
-    const retPersoner = (ret.personer||[]).map(pid=>personer.find(p=>p.id===pid)).filter(Boolean);
-    return `<div class="card" onclick="openModal('${ret.id}')">
-      ${showMatch && ret.matches > 0 ? `<div class="match-badge">${ret.matches} match</div>` : ''}
-      <div class="card-name">${esc(ret.navn)}</div>
-      <div class="card-desc">${esc(ret.beskrivelse||'')}</div>
-      <div class="tags">
-        ${retPersoner.map(p=>`<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}
-        ${(ret.kategorier||[]).map(k=>`<span class="tag kat">${esc(k)}</span>`).join('')}
-        ${(ret.ingredienser||[]).slice(0,4).map(i=>`<span class="tag">${esc(i)}</span>`).join('')}
-        ${(ret.ingredienser||[]).length>4?`<span class="tag">+${ret.ingredienser.length-4} mere</span>`:''}
-      </div>
-      <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-sm" onclick="editRet('${ret.id}')">✏️ Rediger</button>
-        <button class="btn-sm danger" onclick="deleteRet('${ret.id}')">🗑 Slet</button>
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+// Skift til rediger-tilstand uden at nulstille editingId
+function editRet(id) {
+  editingId = id;
+  currentPage = 'rediger';
+  updateNav();
+  render();
+}
+
+function updateNav() {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  // 'ny' og 'rediger' begge highlighter "Ny ret"-knappen
+  const activeId = (currentPage === 'rediger') ? 'nav-ny' : 'nav-' + currentPage;
+  const btn = document.getElementById(activeId);
+  if (btn) btn.classList.add('active');
 }
 
 // ── Render ────────────────────────────────────────────────────────────
-async function render() {
+function render() {
   const el = document.getElementById('main-content');
 
   // SØGESIDE
   if (currentPage === 'soeg') {
     const personChipsHtml = personer.length
-      ? personer.map(p=>`<span class="person-search-chip${soegPersonIds.includes(p.id)?' selected':''}" onclick="togglePersonSearch('${p.id}',this)">👤 ${esc(p.navn)}</span>`).join('')
+      ? personer.map(p => `<span class="person-search-chip${soegPersonIds.includes(p.id)?' selected':''}" onclick="togglePersonSearch('${p.id}',this)">👤 ${esc(p.navn)}</span>`).join('')
       : '<span style="color:var(--text-muted);font-size:13px;font-style:italic">Ingen personer oprettet</span>';
 
     el.innerHTML = `
@@ -451,7 +435,7 @@ async function render() {
             <div id="soeg-kat-wrap"></div>
           </div>
         </div>
-        <div class="form-group" style="margin-top:16px;margin-bottom:0">
+        <div class="form-group" style="margin-top:14px;margin-bottom:0">
           <label>Person</label>
           <div class="person-search-chips">${personChipsHtml}</div>
         </div>
@@ -464,8 +448,8 @@ async function render() {
     `;
     const ingWrap = createTagInput('Tilsæt ingrediens…', false, getAllIngredienser);
     const katWrap = createTagInput('Tilsæt kategori…', true, getAllKategorier);
-    document.getElementById('soeg-ing-wrap').replaceWith(ingWrap); ingWrap.id='soeg-ing-wrap';
-    document.getElementById('soeg-kat-wrap').replaceWith(katWrap); katWrap.id='soeg-kat-wrap';
+    document.getElementById('soeg-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'soeg-ing-wrap';
+    document.getElementById('soeg-kat-wrap').replaceWith(katWrap); katWrap.id = 'soeg-kat-wrap';
 
   // ALLE RETTER
   } else if (currentPage === 'alle') {
@@ -477,9 +461,10 @@ async function render() {
       ${renderCards(retter)}
     `;
 
-  // NY / REDIGER
-  } else if (currentPage === 'ny' || editingId) {
-    const ret = editingId ? retter.find(r=>r.id===editingId) : null;
+  // NY RET eller REDIGER
+  } else if (currentPage === 'ny' || currentPage === 'rediger') {
+    const ret = (currentPage === 'rediger') ? retter.find(r => r.id === editingId) : null;
+
     el.innerHTML = `
       <div class="page-header">
         <div class="page-title">${ret ? 'Rediger ret' : 'Ny ret'}</div>
@@ -488,11 +473,11 @@ async function render() {
       <div class="panel">
         <div class="form-group">
           <label>Navn på retten *</label>
-          <input type="text" id="f-navn" placeholder="f.eks. Spaghetti Bolognese" value="${esc(ret?.navn||'')}"/>
+          <input type="text" id="f-navn" placeholder="f.eks. Spaghetti Bolognese" value="${esc(ret?.navn || '')}"/>
         </div>
         <div class="form-group">
           <label>Beskrivelse</label>
-          <textarea id="f-desc" placeholder="Kort beskrivelse af retten…">${esc(ret?.beskrivelse||'')}</textarea>
+          <textarea id="f-desc" placeholder="Kort beskrivelse af retten…">${esc(ret?.beskrivelse || '')}</textarea>
         </div>
         <div class="form-group">
           <label>Ingredienser <span style="color:var(--text-muted);font-size:11px;text-transform:none">(vælg eksisterende eller tilsæt ny)</span></label>
@@ -512,13 +497,19 @@ async function render() {
         </div>
       </div>
     `;
+
     const ingWrap = createTagInput('Tilsæt ingrediens…', false, getAllIngredienser);
     const katWrap = createTagInput('Tilsæt kategori…', true, getAllKategorier);
-    const personWrap = createPersonPicker(ret?.personer||[]);
-    document.getElementById('f-ing-wrap').replaceWith(ingWrap); ingWrap.id='f-ing-wrap';
-    document.getElementById('f-kat-wrap').replaceWith(katWrap); katWrap.id='f-kat-wrap';
-    document.getElementById('f-person-wrap').replaceWith(personWrap); personWrap.id='f-person-wrap';
-    if (ret) { ingWrap._setTags(ret.ingredienser||[]); katWrap._setTags(ret.kategorier||[]); }
+    const personWrap = createPersonPicker(ret?.personer || []);
+
+    document.getElementById('f-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'f-ing-wrap';
+    document.getElementById('f-kat-wrap').replaceWith(katWrap); katWrap.id = 'f-kat-wrap';
+    document.getElementById('f-person-wrap').replaceWith(personWrap); personWrap.id = 'f-person-wrap';
+
+    if (ret) {
+      ingWrap._setTags(ret.ingredienser || []);
+      katWrap._setTags(ret.kategorier || []);
+    }
 
   // PERSONER
   } else if (currentPage === 'personer') {
@@ -527,7 +518,7 @@ async function render() {
         <div class="page-title">Personer</div>
         <div class="page-sub">Administrer hvem der kan lave retter</div>
       </div>
-      <div class="panel" style="max-width:600px">
+      <div class="panel" style="max-width:580px">
         <div class="form-group">
           <label>Tilføj ny person</label>
           <div class="inline-add">
@@ -536,23 +527,21 @@ async function render() {
           </div>
         </div>
         <div>
-          <label style="margin-bottom:14px;display:block">Oprettede personer (${personer.length})</label>
+          <label style="margin-bottom:12px;display:block">Oprettede personer (${personer.length})</label>
           <div class="person-list">
             ${!personer.length
-              ? '<div class="person-chip-empty">Ingen personer endnu — tilføj en ovenfor</div>'
+              ? '<div class="person-chip-empty" style="padding:8px 0">Ingen personer endnu</div>'
               : personer.map(p => {
-                  const antal = retter.filter(r=>(r.personer||[]).includes(p.id)).length;
+                  const antal = retter.filter(r => (r.personer||[]).includes(p.id)).length;
                   return `<div class="person-row">
-                    <div class="person-row-name">
+                    <div class="person-row-left">
                       <div class="person-avatar">${esc(initials(p.navn))}</div>
-                      <div class="person-name-block">
-                        <div class="name">${esc(p.navn)}</div>
-                        <div class="meta">${antal} ret${antal!==1?'ter':''}</div>
+                      <div>
+                        <div class="person-name">${esc(p.navn)}</div>
+                        <div class="person-meta">${antal} ret${antal !== 1 ? 'ter' : ''}</div>
                       </div>
                     </div>
-                    <div class="person-row-actions">
-                      <button class="btn-sm danger" onclick="deletePerson('${p.id}')">Slet</button>
-                    </div>
+                    <button class="btn-sm danger" onclick="deletePerson('${p.id}')">Slet</button>
                   </div>`;
                 }).join('')
             }
@@ -563,9 +552,32 @@ async function render() {
   }
 }
 
-// ── Person search ─────────────────────────────────────────────────────
+// ── Cards ─────────────────────────────────────────────────────────────
+function renderCards(list, showMatch=false) {
+  if (!list.length) return `<div class="empty"><div class="em-icon">🥄</div><p>Ingen retter fundet</p></div>`;
+  return `<div class="cards-grid">${list.map(ret => {
+    const retPersoner = (ret.personer||[]).map(pid => personer.find(p => p.id===pid)).filter(Boolean);
+    return `<div class="card" onclick="openModal('${ret.id}')">
+      ${showMatch && ret.matches > 0 ? `<div class="match-badge">${ret.matches} match</div>` : ''}
+      <div class="card-name">${esc(ret.navn)}</div>
+      <div class="card-desc">${esc(ret.beskrivelse||'')}</div>
+      <div class="tags">
+        ${retPersoner.map(p => `<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}
+        ${(ret.kategorier||[]).map(k => `<span class="tag kat">${esc(k)}</span>`).join('')}
+        ${(ret.ingredienser||[]).slice(0,4).map(i => `<span class="tag">${esc(i)}</span>`).join('')}
+        ${(ret.ingredienser||[]).length > 4 ? `<span class="tag">+${ret.ingredienser.length-4} mere</span>` : ''}
+      </div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-sm" onclick="editRet('${ret.id}')">✏️ Rediger</button>
+        <button class="btn-sm danger" onclick="deleteRet('${ret.id}')">🗑 Slet</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── Person search toggle ──────────────────────────────────────────────
 function togglePersonSearch(pid, el) {
-  if (soegPersonIds.includes(pid)) { soegPersonIds=soegPersonIds.filter(i=>i!==pid); el.classList.remove('selected'); }
+  if (soegPersonIds.includes(pid)) { soegPersonIds = soegPersonIds.filter(i => i !== pid); el.classList.remove('selected'); }
   else { soegPersonIds.push(pid); el.classList.add('selected'); }
 }
 
@@ -575,7 +587,7 @@ async function doSearch() {
   const kat = document.getElementById('soeg-kat-wrap')?._getTags?.() || [];
   try {
     const res = await api('POST', '/soeg', { ingredienser: ing, kategorier: kat, personer: soegPersonIds });
-    document.getElementById('soeg-results').innerHTML = renderCards(res, ing.length>0||kat.length>0||soegPersonIds.length>0);
+    document.getElementById('soeg-results').innerHTML = renderCards(res, ing.length>0 || kat.length>0 || soegPersonIds.length>0);
   } catch(e) { toast('Søgning fejlede', true); }
 }
 
@@ -591,9 +603,10 @@ async function saveRet() {
     personer: document.getElementById('f-person-wrap')?._getSelected?.() || [],
   };
   try {
-    if (editingId) {
-      const updated = await api('PUT', '/retter/'+editingId, body);
-      retter[retter.findIndex(r=>r.id===editingId)] = updated;
+    if (currentPage === 'rediger' && editingId) {
+      const updated = await api('PUT', '/retter/' + editingId, body);
+      const idx = retter.findIndex(r => r.id === editingId);
+      if (idx !== -1) retter[idx] = updated;
       toast('Ret opdateret ✓');
     } else {
       retter.push(await api('POST', '/retter', body));
@@ -603,18 +616,11 @@ async function saveRet() {
   } catch(e) { toast('Kunne ikke gemme', true); }
 }
 
-function editRet(id) {
-  editingId = id;
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('nav-ny').classList.add('active');
-  render();
-}
-
 async function deleteRet(id) {
   if (!confirm('Slet denne ret?')) return;
   try {
-    await api('DELETE', '/retter/'+id);
-    retter = retter.filter(r=>r.id!==id);
+    await api('DELETE', '/retter/' + id);
+    retter = retter.filter(r => r.id !== id);
     toast('Ret slettet');
     closeModal();
     render();
@@ -636,16 +642,16 @@ async function addPerson() {
 }
 
 async function deletePerson(id) {
-  const p = personer.find(p=>p.id===id);
-  const antal = retter.filter(r=>(r.personer||[]).includes(id)).length;
+  const p = personer.find(p => p.id === id);
+  const antal = retter.filter(r => (r.personer||[]).includes(id)).length;
   const msg = antal > 0
     ? `Slet ${p?.navn}? Personen er tilknyttet ${antal} ret(ter) — tilknytningen fjernes automatisk.`
     : `Slet ${p?.navn}?`;
   if (!confirm(msg)) return;
   try {
-    await api('DELETE', '/personer/'+id);
-    personer = personer.filter(p=>p.id!==id);
-    retter = retter.map(r=>({...r, personer:(r.personer||[]).filter(pid=>pid!==id)}));
+    await api('DELETE', '/personer/' + id);
+    personer = personer.filter(p => p.id !== id);
+    retter = retter.map(r => ({ ...r, personer: (r.personer||[]).filter(pid => pid !== id) }));
     toast('Person slettet');
     render();
   } catch(e) { toast('Kunne ikke slette', true); }
@@ -653,16 +659,17 @@ async function deletePerson(id) {
 
 // ── Modal ─────────────────────────────────────────────────────────────
 function openModal(id) {
-  const ret = retter.find(r=>r.id===id);
+  const ret = retter.find(r => r.id === id);
   if (!ret) return;
-  currentModalId = id;
-  const retPersoner = (ret.personer||[]).map(pid=>personer.find(p=>p.id===pid)).filter(Boolean);
+  const retPersoner = (ret.personer||[]).map(pid => personer.find(p => p.id===pid)).filter(Boolean);
   document.getElementById('modal-name').textContent = ret.navn;
   document.getElementById('modal-body').innerHTML = `
     ${ret.beskrivelse ? `<div class="detail-section"><h4>Beskrivelse</h4><p>${esc(ret.beskrivelse)}</p></div>` : ''}
     ${retPersoner.length ? `<div class="detail-section"><h4>Kan laves af</h4><div class="ing-list">${retPersoner.map(p=>`<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}</div></div>` : ''}
     ${ret.kategorier?.length ? `<div class="detail-section"><h4>Kategorier</h4><div class="ing-list">${ret.kategorier.map(k=>`<span class="tag kat">${esc(k)}</span>`).join('')}</div></div>` : ''}
-    ${ret.ingredienser?.length ? `<div class="detail-section"><h4>Ingredienser (${ret.ingredienser.length})</h4><div class="ing-list">${ret.ingredienser.map(i=>`<span class="tag">${esc(i)}</span>`).join('')}</div></div>` : '<div class="detail-section"><p style="color:var(--text-muted)">Ingen ingredienser tilføjet</p></div>'}
+    ${ret.ingredienser?.length
+      ? `<div class="detail-section"><h4>Ingredienser (${ret.ingredienser.length})</h4><div class="ing-list">${ret.ingredienser.map(i=>`<span class="tag">${esc(i)}</span>`).join('')}</div></div>`
+      : '<div class="detail-section"><p style="color:var(--text-muted)">Ingen ingredienser tilføjet</p></div>'}
   `;
   document.getElementById('modal-edit-btn').onclick = () => { closeModal(); editRet(id); };
   document.getElementById('modal-del-btn').onclick = () => deleteRet(id);
@@ -672,7 +679,6 @@ function openModal(id) {
 function closeModal(e) {
   if (e && e.target !== document.getElementById('modal')) return;
   document.getElementById('modal').style.display = 'none';
-  currentModalId = null;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────
