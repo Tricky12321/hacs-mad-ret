@@ -45,14 +45,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
-    # Register API views
     hass.http.register_view(MadPlannerRetterView(hass))
     hass.http.register_view(MadPlannerRetView(hass))
     hass.http.register_view(MadPlannerSoegView(hass))
     hass.http.register_view(MadPlannerPersonerView(hass))
     hass.http.register_view(MadPlannerPersonView(hass))
 
-    # Register static files for the frontend
     frontend_path = Path(__file__).parent / "frontend"
     try:
         from homeassistant.components.http import StaticPathConfig
@@ -62,7 +60,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         hass.http.register_static_path("/mad_planner_static", str(frontend_path), False)
 
-    # Register the frontend panel
     from homeassistant.components import frontend
     frontend.async_register_built_in_panel(
         hass,
@@ -85,7 +82,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class MadPlannerRetterView(HomeAssistantView):
     url = "/api/mad_planner/retter"
     name = "api:mad_planner:retter"
-    requires_auth = False
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -113,7 +110,7 @@ class MadPlannerRetterView(HomeAssistantView):
 class MadPlannerRetView(HomeAssistantView):
     url = "/api/mad_planner/retter/{ret_id}"
     name = "api:mad_planner:ret"
-    requires_auth = False
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -150,7 +147,7 @@ class MadPlannerRetView(HomeAssistantView):
 class MadPlannerSoegView(HomeAssistantView):
     url = "/api/mad_planner/soeg"
     name = "api:mad_planner:soeg"
-    requires_auth = False
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -189,7 +186,7 @@ class MadPlannerSoegView(HomeAssistantView):
 class MadPlannerPersonerView(HomeAssistantView):
     url = "/api/mad_planner/personer"
     name = "api:mad_planner:personer"
-    requires_auth = False
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -215,7 +212,7 @@ class MadPlannerPersonerView(HomeAssistantView):
 class MadPlannerPersonView(HomeAssistantView):
     url = "/api/mad_planner/personer/{person_id}"
     name = "api:mad_planner:person"
-    requires_auth = False
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
@@ -226,7 +223,6 @@ class MadPlannerPersonView(HomeAssistantView):
         data["personer"] = [p for p in data["personer"] if p["id"] != person_id]
         if len(data["personer"]) == orig:
             return self.json({"error": "Ikke fundet"}, status_code=404)
-        # Remove person from all retter
         for ret in data["retter"]:
             if person_id in ret.get("personer", []):
                 ret["personer"] = [p for p in ret["personer"] if p != person_id]

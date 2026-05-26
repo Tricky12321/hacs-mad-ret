@@ -65,7 +65,6 @@
   input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 76px; }
 
-  /* Smart tag input */
   .tag-field-wrap { flex: 1; position: relative; }
   .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 7px 9px; min-height: 46px; cursor: text; transition: border-color 0.15s; }
   .tag-input-wrap:focus-within { border-color: var(--accent); }
@@ -78,14 +77,12 @@
   .tag-pill button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; transition: color 0.15s; }
   .tag-pill button:hover { color: var(--red); }
 
-  /* Suggestions dropdown */
   .tag-suggestions { position: absolute; top: calc(100% + 3px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; }
   .tag-sug-item { padding: 9px 15px; cursor: pointer; font-size: 14px; transition: background 0.12s; display: flex; align-items: center; justify-content: space-between; }
   .tag-sug-item:hover, .tag-sug-item.focused { background: var(--surface2); }
   .tag-sug-item .sug-count { font-size: 11px; color: var(--text-muted); }
   .tag-sug-new { color: var(--accent); }
 
-  /* Person chips */
   .person-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .person-chip { background: var(--surface2); border: 2px solid var(--border); border-radius: 9px; padding: 7px 14px; cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.15s; display: flex; align-items: center; gap: 7px; user-select: none; }
   .person-chip:hover { border-color: var(--person-border); color: var(--person-color); }
@@ -94,13 +91,11 @@
   .person-chip.selected .check { opacity: 1; }
   .person-chip-empty { color: var(--text-muted); font-size: 13px; font-style: italic; }
 
-  /* Person search chips */
   .person-search-chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .person-search-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--text-muted); transition: all 0.15s; user-select: none; }
   .person-search-chip:hover { border-color: var(--person-border); color: var(--person-color); }
   .person-search-chip.selected { background: #111e28; border-color: var(--person-border); color: var(--person-color); font-weight: 600; }
 
-  /* Person list */
   .person-list { display: flex; flex-direction: column; gap: 9px; }
   .person-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 11px; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; }
   .person-row-left { display: flex; align-items: center; gap: 11px; }
@@ -126,6 +121,12 @@
   .empty .em-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.35; }
   .empty p { font-size: 15px; }
 
+  /* Loading overlay */
+  .loading { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 999; }
+  .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .loading p { color: var(--text-muted); font-size: 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; }
   .modal h2 { font-family: var(--serif); font-size: 23px; color: var(--accent); margin-bottom: 5px; }
@@ -149,7 +150,14 @@
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- Loading overlay — vises mens token hentes -->
+<div class="loading" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <p>Forbinder til Home Assistant…</p>
+</div>
+
+<div class="app" style="display:none" id="app">
   <aside class="sidebar">
     <div class="logo"><span>🍽️</span> Mad Planner</div>
     <button class="nav-btn active" id="nav-soeg" onclick="showPage('soeg')"><span class="icon">🔍</span> Find en ret</button>
@@ -178,17 +186,76 @@
 // ── State ─────────────────────────────────────────────────────────────
 let retter = [];
 let personer = [];
-let currentPage = 'soeg';  // 'soeg' | 'alle' | 'ny' | 'rediger' | 'personer'
+let currentPage = 'soeg';
 let editingId = null;
 let soegPersonIds = [];
+let _token = null;
 
-// ── API — ingen token-ventetid da requires_auth = False ───────────────
+// ── Auth ──────────────────────────────────────────────────────────────
+// HA's iframe-panel sender tokenet via postMessage når siden beder om det.
+// Vi venter på det før vi viser noget UI.
+function getToken() {
+  if (_token) return Promise.resolve(_token);
+
+  return new Promise(resolve => {
+    // Lyt efter token fra HA parent
+    const handler = e => {
+      const token =
+        e.data?.result?.access_token ||   // HA >= 2022
+        e.data?.access_token ||            // Ældre HA
+        e.data?.token;
+      if (token) {
+        _token = token;
+        window.removeEventListener('message', handler);
+        clearTimeout(fallback);
+        resolve(token);
+      }
+    };
+    window.addEventListener('message', handler);
+
+    // Bed parent om token (standard HA iframe auth flow)
+    try {
+      window.parent.postMessage({ type: 'get_external_auth', callback: 'externalAuthCallback' }, '*');
+    } catch(e) {}
+
+    // Fallback: hvis siden åbnes direkte (fx via URL-token) eller i browser
+    const fallback = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      const urlToken = new URLSearchParams(window.location.search).get('token');
+      _token = urlToken || '';
+      resolve(_token);
+    }, 3000);
+  });
+}
+
+// HA kalder denne callback når den sender token tilbage
+window.externalAuthCallback = (tokenData) => {
+  if (tokenData?.access_token) {
+    _token = tokenData.access_token;
+  }
+};
+
 async function api(method, path, body) {
+  const token = await getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
   const res = await fetch('/api/mad_planner' + path, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: body ? JSON.stringify(body) : undefined
   });
+  if (res.status === 401) {
+    // Token udløbet — nulstil og prøv igen med nyt token
+    _token = null;
+    const newToken = await getToken();
+    headers['Authorization'] = 'Bearer ' + newToken;
+    const retry = await fetch('/api/mad_planner' + path, {
+      method, headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!retry.ok) throw new Error(await retry.text());
+    return retry.json();
+  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -392,7 +459,6 @@ function showPage(page) {
   render();
 }
 
-// Skift til rediger-tilstand uden at nulstille editingId
 function editRet(id) {
   editingId = id;
   currentPage = 'rediger';
@@ -402,7 +468,6 @@ function editRet(id) {
 
 function updateNav() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  // 'ny' og 'rediger' begge highlighter "Ny ret"-knappen
   const activeId = (currentPage === 'rediger') ? 'nav-ny' : 'nav-' + currentPage;
   const btn = document.getElementById(activeId);
   if (btn) btn.classList.add('active');
@@ -412,7 +477,6 @@ function updateNav() {
 function render() {
   const el = document.getElementById('main-content');
 
-  // SØGESIDE
   if (currentPage === 'soeg') {
     const personChipsHtml = personer.length
       ? personer.map(p => `<span class="person-search-chip${soegPersonIds.includes(p.id)?' selected':''}" onclick="togglePersonSearch('${p.id}',this)">👤 ${esc(p.navn)}</span>`).join('')
@@ -451,7 +515,6 @@ function render() {
     document.getElementById('soeg-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'soeg-ing-wrap';
     document.getElementById('soeg-kat-wrap').replaceWith(katWrap); katWrap.id = 'soeg-kat-wrap';
 
-  // ALLE RETTER
   } else if (currentPage === 'alle') {
     el.innerHTML = `
       <div class="page-header">
@@ -461,10 +524,8 @@ function render() {
       ${renderCards(retter)}
     `;
 
-  // NY RET eller REDIGER
   } else if (currentPage === 'ny' || currentPage === 'rediger') {
     const ret = (currentPage === 'rediger') ? retter.find(r => r.id === editingId) : null;
-
     el.innerHTML = `
       <div class="page-header">
         <div class="page-title">${ret ? 'Rediger ret' : 'Ny ret'}</div>
@@ -497,21 +558,14 @@ function render() {
         </div>
       </div>
     `;
-
     const ingWrap = createTagInput('Tilsæt ingrediens…', false, getAllIngredienser);
     const katWrap = createTagInput('Tilsæt kategori…', true, getAllKategorier);
     const personWrap = createPersonPicker(ret?.personer || []);
-
     document.getElementById('f-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'f-ing-wrap';
     document.getElementById('f-kat-wrap').replaceWith(katWrap); katWrap.id = 'f-kat-wrap';
     document.getElementById('f-person-wrap').replaceWith(personWrap); personWrap.id = 'f-person-wrap';
+    if (ret) { ingWrap._setTags(ret.ingredienser || []); katWrap._setTags(ret.kategorier || []); }
 
-    if (ret) {
-      ingWrap._setTags(ret.ingredienser || []);
-      katWrap._setTags(ret.kategorier || []);
-    }
-
-  // PERSONER
   } else if (currentPage === 'personer') {
     el.innerHTML = `
       <div class="page-header">
@@ -575,13 +629,11 @@ function renderCards(list, showMatch=false) {
   }).join('')}</div>`;
 }
 
-// ── Person search toggle ──────────────────────────────────────────────
 function togglePersonSearch(pid, el) {
   if (soegPersonIds.includes(pid)) { soegPersonIds = soegPersonIds.filter(i => i !== pid); el.classList.remove('selected'); }
   else { soegPersonIds.push(pid); el.classList.add('selected'); }
 }
 
-// ── Search ────────────────────────────────────────────────────────────
 async function doSearch() {
   const ing = document.getElementById('soeg-ing-wrap')?._getTags?.() || [];
   const kat = document.getElementById('soeg-kat-wrap')?._getTags?.() || [];
@@ -591,7 +643,6 @@ async function doSearch() {
   } catch(e) { toast('Søgning fejlede', true); }
 }
 
-// ── Save ret ──────────────────────────────────────────────────────────
 async function saveRet() {
   const navn = document.getElementById('f-navn').value.trim();
   if (!navn) { toast('Navn er påkrævet', true); return; }
@@ -627,7 +678,6 @@ async function deleteRet(id) {
   } catch(e) { toast('Kunne ikke slette', true); }
 }
 
-// ── Person CRUD ───────────────────────────────────────────────────────
 async function addPerson() {
   const inp = document.getElementById('ny-person-navn');
   const navn = inp.value.trim();
@@ -657,7 +707,6 @@ async function deletePerson(id) {
   } catch(e) { toast('Kunne ikke slette', true); }
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────
 function openModal(id) {
   const ret = retter.find(r => r.id === id);
   if (!ret) return;
@@ -682,7 +731,16 @@ function closeModal(e) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────
-(async () => { await loadAll(); render(); })();
+(async () => {
+  // Hent token først — vis loading overlay imens
+  await getToken();
+  // Indlæs data
+  await loadAll();
+  // Skjul loading, vis app
+  document.getElementById('loading-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'grid';
+  render();
+})();
 </script>
 </body>
 </html>
