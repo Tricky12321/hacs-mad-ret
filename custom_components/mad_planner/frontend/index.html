@@ -190,50 +190,65 @@ let currentPage = 'soeg';
 let editingId = null;
 let soegPersonIds = [];
 let _token = null;
+let _pendingTokenResolve = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────
-// HA's iframe-panel sender tokenet via postMessage når siden beder om det.
-// Vi venter på det før vi viser noget UI.
+// HA kalder externalAuthCallback direkte på window — den skal resolve
+// den ventende Promise fra getToken(), ikke blot sætte _token.
+window.externalAuthCallback = (tokenData) => {
+  const token = tokenData?.access_token || tokenData?.token || '';
+  _token = token;
+  if (_pendingTokenResolve) {
+    const r = _pendingTokenResolve;
+    _pendingTokenResolve = null;
+    r(token);
+  }
+};
+
 function getToken() {
   if (_token) return Promise.resolve(_token);
 
+  // Same-origin: prøv direkte adgang til HA's auth objekt i parent vinduet
+  try {
+    if (window.parent !== window) {
+      const ha = window.parent.document.querySelector('home-assistant');
+      const t = ha?.__hass?.auth?.data?.access_token || ha?._hass?.auth?.data?.access_token;
+      if (t) { _token = t; return Promise.resolve(t); }
+    }
+  } catch(e) {}
+
   return new Promise(resolve => {
-    // Lyt efter token fra HA parent
+    _pendingTokenResolve = resolve;
+
+    // Lyt også efter postMessage-svar (HA sender tilbage i nogle versioner)
     const handler = e => {
       const token =
-        e.data?.result?.access_token ||   // HA >= 2022
-        e.data?.access_token ||            // Ældre HA
+        e.data?.result?.access_token ||
+        e.data?.payload?.access_token ||
+        e.data?.access_token ||
         e.data?.token;
       if (token) {
         _token = token;
         window.removeEventListener('message', handler);
-        clearTimeout(fallback);
-        resolve(token);
+        clearTimeout(timer);
+        if (_pendingTokenResolve) { _pendingTokenResolve(token); _pendingTokenResolve = null; }
       }
     };
     window.addEventListener('message', handler);
 
-    // Bed parent om token (standard HA iframe auth flow)
     try {
       window.parent.postMessage({ type: 'get_external_auth', callback: 'externalAuthCallback' }, '*');
     } catch(e) {}
 
-    // Fallback: hvis siden åbnes direkte (fx via URL-token) eller i browser
-    const fallback = setTimeout(() => {
+    const timer = setTimeout(() => {
       window.removeEventListener('message', handler);
+      _pendingTokenResolve = null;
       const urlToken = new URLSearchParams(window.location.search).get('token');
       _token = urlToken || '';
       resolve(_token);
     }, 3000);
   });
 }
-
-// HA kalder denne callback når den sender token tilbage
-window.externalAuthCallback = (tokenData) => {
-  if (tokenData?.access_token) {
-    _token = tokenData.access_token;
-  }
-};
 
 async function api(method, path, body) {
   const token = await getToken();
