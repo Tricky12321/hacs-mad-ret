@@ -205,7 +205,6 @@ let retterSort = 'oprettet-ny';
 let personerSort = 'oprettet-ny';
 // ── Auth ──────────────────────────────────────────────────────────────
 function hardRefresh() {
-  // Ryd browser-cache og tving fuld genindlæsning for at løse token-problemer på mobil
   if ('caches' in window) {
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).finally(() => {
       location.reload(true);
@@ -215,34 +214,40 @@ function hardRefresh() {
   }
 }
 
-function getToken() {
+function getHassData() {
   try {
     const stored = JSON.parse(localStorage.getItem('hassTokens') || 'null');
     if (stored?.access_token) {
-      if (stored.expires && Date.now() >= stored.expires) return Promise.resolve('');
-      return Promise.resolve(stored.access_token);
+      if (stored.expires && Date.now() >= stored.expires) return null;
+      return stored;
     }
   } catch(e) {}
-  return Promise.resolve('');
+  return null;
+}
+
+function getToken() {
+  const data = getHassData();
+  return Promise.resolve(data?.access_token || '');
+}
+
+function hassApiUrl(path) {
+  const data = getHassData();
+  const base = data?.hassUrl?.replace(/\/$/, '') || '';
+  return base + '/api/mad_planner' + path;
 }
 
 async function api(method, path, body) {
   const token = await getToken();
   if (!token) throw new Error('Ikke autentificeret — log ind i Home Assistant');
+  const url = hassApiUrl(path);
   const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
-  const res = await fetch('/api/mad_planner' + path, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined
-  });
+  const opts = { method, headers, body: body ? JSON.stringify(body) : undefined };
+  const res = await fetch(url, opts);
   if (res.status === 401) {
     const newToken = await getToken();
     if (!newToken) throw new Error('Session udløbet — genindlæs siden');
     headers['Authorization'] = 'Bearer ' + newToken;
-    const retry = await fetch('/api/mad_planner' + path, {
-      method, headers,
-      body: body ? JSON.stringify(body) : undefined
-    });
+    const retry = await fetch(url, { method, headers, body: opts.body });
     if (!retry.ok) throw new Error(await retry.text());
     return retry.json();
   }
