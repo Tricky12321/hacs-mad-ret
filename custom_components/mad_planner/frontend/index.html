@@ -36,6 +36,9 @@
   .nav-btn.active { background: var(--accent); color: #0f0e0c; font-weight: 700; }
   .nav-btn .icon { font-size: 17px; min-width: 20px; }
   .sidebar-sep { height: 1px; background: var(--border); margin: 8px 0; }
+  .sidebar-bottom { margin-top: auto; padding-top: 8px; }
+  .nav-btn.refresh-btn { color: var(--text-muted); font-size: 13px; opacity: 0.7; }
+  .nav-btn.refresh-btn:hover { opacity: 1; color: var(--accent); }
 
   .page-header { margin-bottom: 32px; }
   .page-title { font-family: var(--serif); font-size: 32px; font-weight: 900; color: var(--accent); }
@@ -171,6 +174,10 @@
     <button class="nav-btn" id="nav-ny" onclick="showPage('ny')"><span class="icon">✚</span> Ny ret</button>
     <div class="sidebar-sep"></div>
     <button class="nav-btn" id="nav-personer" onclick="showPage('personer')"><span class="icon">👤</span> Personer</button>
+    <div class="sidebar-bottom">
+      <div class="sidebar-sep"></div>
+      <button class="nav-btn refresh-btn" onclick="hardRefresh()"><span class="icon">↻</span> Genindlæs</button>
+    </div>
   </aside>
   <main class="main" id="main-content"></main>
 </div>
@@ -197,6 +204,17 @@ let soegPersonIds = [];
 let retterSort = 'oprettet-ny';
 let personerSort = 'oprettet-ny';
 // ── Auth ──────────────────────────────────────────────────────────────
+function hardRefresh() {
+  // Ryd browser-cache og tving fuld genindlæsning for at løse token-problemer på mobil
+  if ('caches' in window) {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).finally(() => {
+      location.reload(true);
+    });
+  } else {
+    location.reload(true);
+  }
+}
+
 function getToken() {
   try {
     const stored = JSON.parse(localStorage.getItem('hassTokens') || 'null');
