@@ -8,6 +8,7 @@ Mad Planner er en Home Assistant custom integration til at administrere madrette
 
 - **Opret og administrer madretter** med navn, beskrivelse, ingredienser og kategorier
 - **Søg og filtrer** på ingredienser og kategorier
+- **Sortering** — "Alle retter" og "Personer" kan sorteres efter: Nyeste, Ældste, A → Z, Z → A. Sorteringstilstand holdes i `retterSort` / `personerSort` og anvendes via `applySort(liste, sort)`.
 - **Lokal datalagring** — data gemmes i `config/mad_planner_data.json`
 
 ### Authentication

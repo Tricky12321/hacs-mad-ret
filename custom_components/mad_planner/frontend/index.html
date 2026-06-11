@@ -40,6 +40,11 @@
   .page-header { margin-bottom: 32px; }
   .page-title { font-family: var(--serif); font-size: 32px; font-weight: 900; color: var(--accent); }
   .page-sub { color: var(--text-muted); margin-top: 5px; font-size: 14px; }
+  .sort-row { display:flex; align-items:center; gap:6px; margin-top:14px; flex-wrap:wrap; }
+  .sort-label { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; font-weight:600; }
+  .sort-btn { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:5px 13px; font-size:12px; color:var(--text-muted); cursor:pointer; font-family:var(--sans); transition:all 0.15s; }
+  .sort-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .sort-btn.active { background:rgba(180,140,80,.12); border-color:var(--accent); color:var(--accent); font-weight:700; }
 
   .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
@@ -189,6 +194,8 @@ let personer = [];
 let currentPage = 'soeg';
 let editingId = null;
 let soegPersonIds = [];
+let retterSort = 'oprettet-ny';
+let personerSort = 'oprettet-ny';
 let _token = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────
@@ -269,6 +276,22 @@ function getAllIngredienser() {
   const counts = {};
   retter.forEach(r => (r.ingredienser||[]).forEach(i => { counts[i] = (counts[i]||0)+1; }));
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([v,c])=>({value:v,count:c}));
+}
+
+// ── Sortering ─────────────────────────────────────────────────────────
+function applySort(list, sort) {
+  const l = [...list];
+  if (sort === 'oprettet-ny') return l.reverse();
+  if (sort === 'oprettet-gl') return l;
+  if (sort === 'alfa-az') return l.sort((a,b) => a.navn.localeCompare(b.navn, 'da'));
+  if (sort === 'alfa-za') return l.sort((a,b) => b.navn.localeCompare(a.navn, 'da'));
+  return l;
+}
+function setRetterSort(s) { retterSort = s; render(); }
+function setPersonerSort(s) { personerSort = s; render(); }
+function sortBtns(current, fn) {
+  const opts = [['oprettet-ny','Nyeste'],['oprettet-gl','Ældste'],['alfa-az','A → Z'],['alfa-za','Z → A']];
+  return opts.map(([v,l]) => `<button class="sort-btn${current===v?' active':''}" onclick="${fn}('${v}')">${l}</button>`).join('');
 }
 
 // ── Smart Tag Input ───────────────────────────────────────────────────
@@ -504,8 +527,12 @@ function render() {
       <div class="page-header">
         <div class="page-title">Alle retter</div>
         <div class="page-sub">${retter.length} retter i din samling</div>
+        <div class="sort-row">
+          <span class="sort-label">Sorter:</span>
+          ${sortBtns(retterSort, 'setRetterSort')}
+        </div>
       </div>
-      ${renderCards(retter)}
+      ${renderCards(applySort(retter, retterSort))}
     `;
 
   } else if (currentPage === 'ny' || currentPage === 'rediger') {
@@ -551,10 +578,15 @@ function render() {
     if (ret) { ingWrap._setTags(ret.ingredienser || []); katWrap._setTags(ret.kategorier || []); }
 
   } else if (currentPage === 'personer') {
+    const sortedP = applySort(personer, personerSort);
     el.innerHTML = `
       <div class="page-header">
         <div class="page-title">Personer</div>
         <div class="page-sub">Administrer hvem der kan lave retter</div>
+        <div class="sort-row">
+          <span class="sort-label">Sorter:</span>
+          ${sortBtns(personerSort, 'setPersonerSort')}
+        </div>
       </div>
       <div class="panel" style="max-width:580px">
         <div class="form-group">
@@ -567,9 +599,9 @@ function render() {
         <div>
           <label style="margin-bottom:12px;display:block">Oprettede personer (${personer.length})</label>
           <div class="person-list">
-            ${!personer.length
+            ${!sortedP.length
               ? '<div class="person-chip-empty" style="padding:8px 0">Ingen personer endnu</div>'
-              : personer.map(p => {
+              : sortedP.map(p => {
                   const antal = retter.filter(r => (r.personer||[]).includes(p.id)).length;
                   return `<div class="person-row">
                     <div class="person-row-left">
