@@ -68,12 +68,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         from homeassistant.components.http import StaticPathConfig
         await hass.http.async_register_static_paths([
-            StaticPathConfig("/mad_planner_static", str(frontend_path), False),
-            StaticPathConfig("/mad_planner_images", str(get_images_dir(hass)), False),
+            StaticPathConfig("/mad-plan-static", str(frontend_path), False),
+            StaticPathConfig("/mad-plan-images", str(get_images_dir(hass)), False),
         ])
     except Exception:
-        hass.http.register_static_path("/mad_planner_static", str(frontend_path), False)
-        hass.http.register_static_path("/mad_planner_images", str(get_images_dir(hass)), False)
+        hass.http.register_static_path("/mad-plan-static", str(frontend_path), False)
+        hass.http.register_static_path("/mad-plan-images", str(get_images_dir(hass)), False)
 
     from homeassistant.components import frontend
     frontend.async_register_built_in_panel(
@@ -81,8 +81,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         component_name="iframe",
         sidebar_title="Mad Planner",
         sidebar_icon="mdi:food-fork-drink",
-        frontend_url_path="mad-planner",
-        config={"url": "/mad_planner_static/index.html"},
+        frontend_url_path="mad-plan",
+        config={"url": "/mad-plan-static/index.html"},
         require_admin=False,
     )
     return True
@@ -95,8 +95,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 # ── Retter ────────────────────────────────────────────────────────────
 
 class MadPlannerRetterView(HomeAssistantView):
-    url = "/api/mad_planner/retter"
-    name = "api:mad_planner:retter"
+    url = "/api/mad-plan/retter"
+    name = "api:mad-plan:retter"
     requires_auth = True
 
     def __init__(self, hass):
@@ -124,8 +124,8 @@ class MadPlannerRetterView(HomeAssistantView):
 
 
 class MadPlannerRetView(HomeAssistantView):
-    url = "/api/mad_planner/retter/{ret_id}"
-    name = "api:mad_planner:ret"
+    url = "/api/mad-plan/retter/{ret_id}"
+    name = "api:mad-plan:ret"
     requires_auth = True
 
     def __init__(self, hass):
@@ -172,8 +172,8 @@ class MadPlannerRetView(HomeAssistantView):
 # ── Søg ───────────────────────────────────────────────────────────────
 
 class MadPlannerSoegView(HomeAssistantView):
-    url = "/api/mad_planner/soeg"
-    name = "api:mad_planner:soeg"
+    url = "/api/mad-plan/soeg"
+    name = "api:mad-plan:soeg"
     requires_auth = True
 
     def __init__(self, hass):
@@ -212,8 +212,8 @@ class MadPlannerSoegView(HomeAssistantView):
 
 class MadPlannerBilledeView(HomeAssistantView):
     """Upload et billede til en ret (multipart/form-data eller base64 JSON)."""
-    url = "/api/mad_planner/retter/{ret_id}/billeder"
-    name = "api:mad_planner:billeder"
+    url = "/api/mad-plan/retter/{ret_id}/billeder"
+    name = "api:mad-plan:billeder"
     requires_auth = True
 
     def __init__(self, hass):
@@ -254,15 +254,15 @@ class MadPlannerBilledeView(HomeAssistantView):
             with open(img_path, "wb") as f:
                 f.write(base64.b64decode(b64))
 
-        billede = {"id": str(uuid.uuid4()), "filename": filename, "url": f"/mad_planner_images/{filename}"}
+        billede = {"id": str(uuid.uuid4()), "filename": filename, "url": f"/mad-plan-images/{filename}"}
         ret.setdefault("billeder", []).append(billede)
         await self.hass.async_add_executor_job(save_data, self.hass, data)
         return self.json(billede, status_code=201)
 
 
 class MadPlannerBilledeSletView(HomeAssistantView):
-    url = "/api/mad_planner/retter/{ret_id}/billeder/{billede_id}"
-    name = "api:mad_planner:billede_slet"
+    url = "/api/mad-plan/retter/{ret_id}/billeder/{billede_id}"
+    name = "api:mad-plan:billede_slet"
     requires_auth = True
 
     def __init__(self, hass):
@@ -287,8 +287,8 @@ class MadPlannerBilledeSletView(HomeAssistantView):
 # ── Kogehistorik ──────────────────────────────────────────────────────
 
 class MadPlannerKogehistorikView(HomeAssistantView):
-    url = "/api/mad_planner/kogehistorik"
-    name = "api:mad_planner:kogehistorik"
+    url = "/api/mad-plan/kogehistorik"
+    name = "api:mad-plan:kogehistorik"
     requires_auth = True
 
     def __init__(self, hass):
@@ -315,8 +315,8 @@ class MadPlannerKogehistorikView(HomeAssistantView):
 
 
 class MadPlannerKogehistorikSletView(HomeAssistantView):
-    url = "/api/mad_planner/kogehistorik/{entry_id}"
-    name = "api:mad_planner:kogehistorik_slet"
+    url = "/api/mad-plan/kogehistorik/{entry_id}"
+    name = "api:mad-plan:kogehistorik_slet"
     requires_auth = True
 
     def __init__(self, hass):
@@ -335,8 +335,8 @@ class MadPlannerKogehistorikSletView(HomeAssistantView):
 # ── Personer ──────────────────────────────────────────────────────────
 
 class MadPlannerPersonerView(HomeAssistantView):
-    url = "/api/mad_planner/personer"
-    name = "api:mad_planner:personer"
+    url = "/api/mad-plan/personer"
+    name = "api:mad-plan:personer"
     requires_auth = True
 
     def __init__(self, hass):
@@ -358,8 +358,8 @@ class MadPlannerPersonerView(HomeAssistantView):
 
 
 class MadPlannerPersonView(HomeAssistantView):
-    url = "/api/mad_planner/personer/{person_id}"
-    name = "api:mad_planner:person"
+    url = "/api/mad-plan/personer/{person_id}"
+    name = "api:mad-plan:person"
     requires_auth = True
 
     def __init__(self, hass):

@@ -233,7 +233,7 @@ function getToken() {
 function hassApiUrl(path) {
   const data = getHassData();
   const base = data?.hassUrl?.replace(/\/$/, '') || '';
-  return base + '/api/mad_planner' + path;
+  return base + '/api/mad-plan' + path;
 }
 
 async function api(method, path, body) {
