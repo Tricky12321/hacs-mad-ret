@@ -196,32 +196,15 @@ let editingId = null;
 let soegPersonIds = [];
 let retterSort = 'oprettet-ny';
 let personerSort = 'oprettet-ny';
-let _token = null;
-
 // ── Auth ──────────────────────────────────────────────────────────────
-// HA gemmer tokens i localStorage under nøglen 'hassTokens' (same-origin iframe).
-// Det er den mest pålidelige måde at hente tokenet på for iframe-panels.
 function getToken() {
-  if (_token) return Promise.resolve(_token);
-
-  // 1. localStorage (same-origin — HA's frontend holder dette opdateret)
   try {
     const stored = JSON.parse(localStorage.getItem('hassTokens') || 'null');
     if (stored?.access_token) {
-      _token = stored.access_token;
-      return Promise.resolve(_token);
+      if (stored.expires && Date.now() >= stored.expires) return Promise.resolve('');
+      return Promise.resolve(stored.access_token);
     }
   } catch(e) {}
-
-  // 2. Direkte adgang til parent vinduets HA auth objekt (same-origin)
-  try {
-    if (window.parent !== window) {
-      const ha = window.parent.document.querySelector('home-assistant');
-      const t = ha?.__hass?.auth?.data?.access_token || ha?._hass?.auth?.data?.access_token;
-      if (t) { _token = t; return Promise.resolve(t); }
-    }
-  } catch(e) {}
-
   return Promise.resolve('');
 }
 
@@ -235,8 +218,6 @@ async function api(method, path, body) {
     body: body ? JSON.stringify(body) : undefined
   });
   if (res.status === 401) {
-    // Token udløbet — ryd cache, læs frisk token fra localStorage og prøv igen
-    _token = null;
     const newToken = await getToken();
     if (!newToken) throw new Error('Session udløbet — genindlæs siden');
     headers['Authorization'] = 'Bearer ' + newToken;
