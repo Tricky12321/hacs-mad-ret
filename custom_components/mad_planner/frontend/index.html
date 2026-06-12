@@ -225,12 +225,18 @@ function getHassData() {
   return null;
 }
 
+let _pendingTokenResolve = null;
+window.externalAuthCallback = (tokenData) => {
+  const t = tokenData?.access_token || tokenData?.token || '';
+  if (_pendingTokenResolve) { const r = _pendingTokenResolve; _pendingTokenResolve = null; r(t); }
+};
+
 function getToken() {
-  // 1. localStorage (works in browser)
+  // 1. localStorage (browser)
   const data = getHassData();
   if (data?.access_token) return Promise.resolve(data.access_token);
 
-  // 2. Parent window HA object (works in companion app WebView)
+  // 2. Parent window HA object (same-origin WebView)
   try {
     if (window.parent !== window) {
       const ha = window.parent.document.querySelector('home-assistant');
@@ -239,7 +245,26 @@ function getToken() {
     }
   } catch(e) {}
 
-  return Promise.resolve('');
+  // 3. HA external auth via postMessage (companion app)
+  return new Promise(resolve => {
+    _pendingTokenResolve = resolve;
+    const handler = e => {
+      const t = e.data?.result?.access_token || e.data?.payload?.access_token
+             || e.data?.access_token || e.data?.token;
+      if (t) {
+        window.removeEventListener('message', handler);
+        clearTimeout(timer);
+        if (_pendingTokenResolve) { const r = _pendingTokenResolve; _pendingTokenResolve = null; r(t); }
+      }
+    };
+    window.addEventListener('message', handler);
+    try { window.parent.postMessage({ type: 'get_external_auth', callback: 'externalAuthCallback' }, '*'); } catch(e) {}
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      _pendingTokenResolve = null;
+      resolve('');
+    }, 3000);
+  });
 }
 
 function hassApiUrl(path) {
