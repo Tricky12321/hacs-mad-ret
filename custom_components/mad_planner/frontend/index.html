@@ -225,18 +225,12 @@ function getHassData() {
   return null;
 }
 
-let _pendingTokenResolve = null;
-window.externalAuthCallback = (tokenData) => {
-  const t = tokenData?.access_token || tokenData?.token || '';
-  if (_pendingTokenResolve) { const r = _pendingTokenResolve; _pendingTokenResolve = null; r(t); }
-};
-
 function getToken() {
   // 1. localStorage (browser)
   const data = getHassData();
   if (data?.access_token) return Promise.resolve(data.access_token);
 
-  // 2. Parent window HA object (same-origin WebView)
+  // 2. Parent window hass object (same-origin WebView)
   try {
     if (window.parent !== window) {
       const ha = window.parent.document.querySelector('home-assistant');
@@ -245,25 +239,35 @@ function getToken() {
     }
   } catch(e) {}
 
-  // 3. HA external auth via postMessage (companion app)
+  // 3. Companion app external auth (Android/iOS) — called via parent window since we are same-origin
   return new Promise(resolve => {
-    _pendingTokenResolve = resolve;
-    const handler = e => {
-      const t = e.data?.result?.access_token || e.data?.payload?.access_token
-             || e.data?.access_token || e.data?.token;
-      if (t) {
-        window.removeEventListener('message', handler);
-        clearTimeout(timer);
-        if (_pendingTokenResolve) { const r = _pendingTokenResolve; _pendingTokenResolve = null; r(t); }
-      }
+    const CB = '__madPlanAuthCb';
+    const done = (tokenData) => {
+      try { delete window.parent[CB]; } catch(e) {}
+      resolve(tokenData?.access_token || tokenData?.token || '');
     };
-    window.addEventListener('message', handler);
-    try { window.parent.postMessage({ type: 'get_external_auth', callback: 'externalAuthCallback' }, '*'); } catch(e) {}
-    const timer = setTimeout(() => {
-      window.removeEventListener('message', handler);
-      _pendingTokenResolve = null;
-      resolve('');
-    }, 3000);
+    try { window.parent[CB] = done; } catch(e) { return resolve(''); }
+
+    const timer = setTimeout(() => done({}), 3000);
+    const cleanup = () => { clearTimeout(timer); };
+
+    try {
+      // Android (V2 preferred, V1 fallback)
+      const extApp = window.parent.externalAppV2 || window.parent.externalApp;
+      if (extApp?.getExternalAuth) {
+        extApp.getExternalAuth({ callback: CB });
+        return;
+      }
+      // iOS
+      if (window.parent.webkit?.messageHandlers?.getExternalAuth) {
+        window.parent.webkit.messageHandlers.getExternalAuth.postMessage({ callback: CB });
+        return;
+      }
+    } catch(e) {}
+
+    // Nothing matched — resolve empty immediately
+    cleanup();
+    done({});
   });
 }
 
@@ -278,13 +282,13 @@ async function api(method, path, body) {
   if (!token) throw new Error('Ikke autentificeret — log ind i Home Assistant');
   const url = hassApiUrl(path);
   const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
-  const opts = { method, headers, body: body ? JSON.stringify(body) : undefined };
+  const opts = { method, headers, credentials: 'include', body: body ? JSON.stringify(body) : undefined };
   const res = await fetch(url, opts);
   if (res.status === 401) {
     const newToken = await getToken();
     if (!newToken) throw new Error('Session udløbet — genindlæs siden');
     headers['Authorization'] = 'Bearer ' + newToken;
-    const retry = await fetch(url, { method, headers, body: opts.body });
+    const retry = await fetch(url, { method, headers, credentials: 'include', body: opts.body });
     if (!retry.ok) throw new Error(await retry.text());
     return retry.json();
   }
