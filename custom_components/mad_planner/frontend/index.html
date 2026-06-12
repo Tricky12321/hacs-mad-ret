@@ -226,8 +226,20 @@ function getHassData() {
 }
 
 function getToken() {
+  // 1. localStorage (works in browser)
   const data = getHassData();
-  return Promise.resolve(data?.access_token || '');
+  if (data?.access_token) return Promise.resolve(data.access_token);
+
+  // 2. Parent window HA object (works in companion app WebView)
+  try {
+    if (window.parent !== window) {
+      const ha = window.parent.document.querySelector('home-assistant');
+      const t = ha?.__hass?.auth?.data?.access_token || ha?._hass?.auth?.data?.access_token;
+      if (t) return Promise.resolve(t);
+    }
+  } catch(e) {}
+
+  return Promise.resolve('');
 }
 
 function hassApiUrl(path) {
@@ -453,9 +465,14 @@ function createPersonPicker(selectedIds=[]) {
 
 // ── Data ──────────────────────────────────────────────────────────────
 async function loadAll() {
+  const token = await getToken();
+  if (!token) {
+    toast('Ikke autentificeret — log ind i Home Assistant', true);
+    return;
+  }
   const [r, p] = await Promise.all([
-    api('GET', '/retter').catch(() => []),
-    api('GET', '/personer').catch(() => []),
+    api('GET', '/retter').catch(e => { toast('Kunne ikke hente retter: ' + e.message, true); return []; }),
+    api('GET', '/personer').catch(e => { toast('Kunne ikke hente personer: ' + e.message, true); return []; }),
   ]);
   retter = r;
   personer = p;
