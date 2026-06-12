@@ -78,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from homeassistant.components.panel_custom import async_register_panel
     await async_register_panel(
         hass,
-        component_name="mad-plan-panel",
+        webcomponent_name="mad-plan-panel",
         sidebar_title="Mad Planner",
         sidebar_icon="mdi:food-fork-drink",
         frontend_url_path="mad-plan",
