@@ -203,6 +203,13 @@ let editingId = null;
 let soegPersonIds = [];
 let retterSort = 'oprettet-ny';
 let personerSort = 'oprettet-ny';
+// ── Panel auth (received from HA panel web component via postMessage) ──
+let _panelToken = null;
+window.addEventListener('message', e => {
+  if (e.data?.type === 'mad_plan_auth' && e.data?.access_token) {
+    _panelToken = e.data.access_token;
+  }
+});
 // ── Auth ──────────────────────────────────────────────────────────────
 function hardRefresh() {
   if ('caches' in window) {
@@ -226,6 +233,9 @@ function getHassData() {
 }
 
 function getToken() {
+  // 0. Token pushed from HA panel web component (most reliable — works in browser and companion app)
+  if (_panelToken) return Promise.resolve(_panelToken);
+
   // 1. localStorage (browser)
   const data = getHassData();
   if (data?.access_token) return Promise.resolve(data.access_token);
@@ -786,11 +796,15 @@ function closeModal(e) {
 
 // ── Init ──────────────────────────────────────────────────────────────
 (async () => {
-  // Hent token først — vis loading overlay imens
-  await getToken();
-  // Indlæs data
+  // Ask parent panel component for the token, then poll briefly for it to arrive
+  try { window.parent.postMessage({ type: 'mad_plan_request_auth' }, '*'); } catch(e) {}
+  await new Promise(resolve => {
+    const deadline = Date.now() + 800;
+    const poll = setInterval(() => {
+      if (_panelToken || Date.now() >= deadline) { clearInterval(poll); resolve(); }
+    }, 30);
+  });
   await loadAll();
-  // Skjul loading, vis app
   document.getElementById('loading-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   render();

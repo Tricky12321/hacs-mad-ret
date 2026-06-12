@@ -75,15 +75,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_static_path("/mad-plan-static", str(frontend_path), False)
         hass.http.register_static_path("/mad-plan-images", str(get_images_dir(hass)), False)
 
-    from homeassistant.components import frontend
-    frontend.async_register_built_in_panel(
+    from homeassistant.components.panel_custom import async_register_panel
+    await async_register_panel(
         hass,
-        component_name="iframe",
+        component_name="mad-plan-panel",
         sidebar_title="Mad Planner",
         sidebar_icon="mdi:food-fork-drink",
         frontend_url_path="mad-plan",
-        config={"url": "/mad-plan-static/index.html"},
         require_admin=False,
+        config=None,
+        js_url="/mad-plan-static/panel.js",
+        embed_iframe=False,
+        trust_external=False,
     )
     return True
 
