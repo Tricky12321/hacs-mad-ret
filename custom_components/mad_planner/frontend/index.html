@@ -144,6 +144,16 @@
   .detail-section p { color: var(--text); line-height: 1.6; }
   .recipe-link { color: var(--accent); text-decoration: none; font-weight: 600; }
   .recipe-link:hover { text-decoration: underline; }
+
+  .rating-picker { display: flex; align-items: center; gap: 4px; }
+  .rating-star { font-size: 26px; color: var(--border); cursor: pointer; transition: color 0.12s, transform 0.1s; line-height: 1; }
+  .rating-star:hover { transform: scale(1.15); }
+  .rating-star.filled { color: var(--accent); }
+  .rating-clear { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; margin-left: 10px; font-family: var(--sans); }
+  .rating-clear:hover { color: var(--red); }
+  .stars { color: var(--accent); font-size: 17px; letter-spacing: 2px; }
+  .stars-empty { color: var(--border); }
+  .card-rating { margin-bottom: 12px; font-size: 15px; letter-spacing: 1px; }
   .ing-list { display: flex; flex-wrap: wrap; gap: 5px; }
 
   .toast { position: fixed; bottom: 26px; right: 26px; background: var(--green); color: white; padding: 11px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; z-index: 200; animation: fadeIn 0.25s; }
@@ -466,6 +476,41 @@ function createTagInput(placeholder, isKat=false, getSuggestions=null) {
   return outer;
 }
 
+// ── Rating picker ─────────────────────────────────────────────────────
+function createRatingPicker(value=0) {
+  let rating = Math.max(0, Math.min(5, Number(value) || 0));
+  const wrap = document.createElement('div');
+  wrap.className = 'rating-picker';
+
+  function render() {
+    wrap.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('span');
+      star.className = 'rating-star' + (i <= rating ? ' filled' : '');
+      star.textContent = '★';
+      star.onclick = () => { rating = (rating === i) ? i - 1 : i; render(); };
+      wrap.appendChild(star);
+    }
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'rating-clear';
+    clear.textContent = 'Nulstil';
+    clear.onclick = () => { rating = 0; render(); };
+    wrap.appendChild(clear);
+  }
+
+  render();
+  wrap._getRating = () => rating;
+  wrap._setRating = v => { rating = Math.max(0, Math.min(5, Number(v) || 0)); render(); };
+  return wrap;
+}
+
+// ── Star display (read-only) ──────────────────────────────────────────
+function renderStars(rating) {
+  const r = Math.max(0, Math.min(5, Number(rating) || 0));
+  return '<span class="stars">' + '★'.repeat(r) + '<span class="stars-empty">' + '★'.repeat(5 - r) + '</span></span>';
+}
+
 // ── Person picker ─────────────────────────────────────────────────────
 function createPersonPicker(selectedIds=[]) {
   let selected = [...selectedIds];
@@ -607,6 +652,10 @@ function render() {
           <input type="text" id="f-link" placeholder="https://…" value="${esc(ret?.link || '')}"/>
         </div>
         <div class="form-group">
+          <label>Bedømmelse</label>
+          <div id="f-rating-wrap"></div>
+        </div>
+        <div class="form-group">
           <label>Ingredienser <span style="color:var(--text-muted);font-size:11px;text-transform:none">(vælg eksisterende eller tilsæt ny)</span></label>
           <div id="f-ing-wrap"></div>
         </div>
@@ -627,8 +676,10 @@ function render() {
     const ingWrap = createTagInput('Tilsæt ingrediens…', false, getAllIngredienser);
     const katWrap = createTagInput('Tilsæt kategori…', true, getAllKategorier);
     const personWrap = createPersonPicker(ret?.personer || []);
+    const ratingWrap = createRatingPicker(ret?.rating || 0);
     document.getElementById('f-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'f-ing-wrap';
     document.getElementById('f-kat-wrap').replaceWith(katWrap); katWrap.id = 'f-kat-wrap';
+    document.getElementById('f-rating-wrap').replaceWith(ratingWrap); ratingWrap.id = 'f-rating-wrap';
     document.getElementById('f-person-wrap').replaceWith(personWrap); personWrap.id = 'f-person-wrap';
     if (ret) { ingWrap._setTags(ret.ingredienser || []); katWrap._setTags(ret.kategorier || []); }
 
@@ -686,6 +737,7 @@ function renderCards(list, showMatch=false) {
       ${showMatch && ret.matches > 0 ? `<div class="match-badge">${ret.matches} match</div>` : ''}
       <div class="card-name">${esc(ret.navn)}</div>
       <div class="card-desc">${esc(ret.beskrivelse||'')}</div>
+      ${ret.rating ? `<div class="card-rating">${renderStars(ret.rating)}</div>` : ''}
       <div class="tags">
         ${retPersoner.map(p => `<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}
         ${(ret.kategorier||[]).map(k => `<span class="tag kat">${esc(k)}</span>`).join('')}
@@ -720,6 +772,7 @@ async function saveRet() {
     navn,
     beskrivelse: document.getElementById('f-desc').value.trim(),
     link: document.getElementById('f-link').value.trim(),
+    rating: document.getElementById('f-rating-wrap')?._getRating?.() || 0,
     ingredienser: document.getElementById('f-ing-wrap')?._getTags?.() || [],
     kategorier: document.getElementById('f-kat-wrap')?._getTags?.() || [],
     personer: document.getElementById('f-person-wrap')?._getSelected?.() || [],
@@ -786,6 +839,7 @@ function openModal(id) {
   document.getElementById('modal-body').innerHTML = `
     ${ret.beskrivelse ? `<div class="detail-section"><h4>Beskrivelse</h4><p>${esc(ret.beskrivelse)}</p></div>` : ''}
     ${ret.link ? `<div class="detail-section"><h4>Opskrift</h4><p><a href="${esc(normLink(ret.link))}" target="_blank" rel="noopener noreferrer" class="recipe-link">🔗 Åbn opskrift</a></p></div>` : ''}
+    ${ret.rating ? `<div class="detail-section"><h4>Bedømmelse</h4><p>${renderStars(ret.rating)}</p></div>` : ''}
     ${retPersoner.length ? `<div class="detail-section"><h4>Kan laves af</h4><div class="ing-list">${retPersoner.map(p=>`<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}</div></div>` : ''}
     ${ret.kategorier?.length ? `<div class="detail-section"><h4>Kategorier</h4><div class="ing-list">${ret.kategorier.map(k=>`<span class="tag kat">${esc(k)}</span>`).join('')}</div></div>` : ''}
     ${ret.ingredienser?.length
