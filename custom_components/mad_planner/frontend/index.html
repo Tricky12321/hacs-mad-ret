@@ -142,6 +142,8 @@
   .detail-section { margin-bottom: 18px; }
   .detail-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 9px; }
   .detail-section p { color: var(--text); line-height: 1.6; }
+  .recipe-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .recipe-link:hover { text-decoration: underline; }
   .ing-list { display: flex; flex-wrap: wrap; gap: 5px; }
 
   .toast { position: fixed; bottom: 26px; right: 26px; background: var(--green); color: white; padding: 11px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; z-index: 200; animation: fadeIn 0.25s; }
@@ -301,6 +303,7 @@ async function api(method, path, body) {
 
 // ── Utilities ─────────────────────────────────────────────────────────
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function normLink(url) { const u = String(url).trim(); return /^https?:\/\//i.test(u) ? u : 'https://' + u; }
 
 function toast(msg, err=false) {
   const t = document.createElement('div');
@@ -600,6 +603,10 @@ function render() {
           <textarea id="f-desc" placeholder="Kort beskrivelse af retten…">${esc(ret?.beskrivelse || '')}</textarea>
         </div>
         <div class="form-group">
+          <label>Link til opskrift</label>
+          <input type="text" id="f-link" placeholder="https://…" value="${esc(ret?.link || '')}"/>
+        </div>
+        <div class="form-group">
           <label>Ingredienser <span style="color:var(--text-muted);font-size:11px;text-transform:none">(vælg eksisterende eller tilsæt ny)</span></label>
           <div id="f-ing-wrap"></div>
         </div>
@@ -687,7 +694,6 @@ function renderCards(list, showMatch=false) {
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="btn-sm" onclick="editRet('${ret.id}')">✏️ Rediger</button>
-        <button class="btn-sm danger" onclick="deleteRet('${ret.id}')">🗑 Slet</button>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -713,6 +719,7 @@ async function saveRet() {
   const body = {
     navn,
     beskrivelse: document.getElementById('f-desc').value.trim(),
+    link: document.getElementById('f-link').value.trim(),
     ingredienser: document.getElementById('f-ing-wrap')?._getTags?.() || [],
     kategorier: document.getElementById('f-kat-wrap')?._getTags?.() || [],
     personer: document.getElementById('f-person-wrap')?._getSelected?.() || [],
@@ -778,6 +785,7 @@ function openModal(id) {
   document.getElementById('modal-name').textContent = ret.navn;
   document.getElementById('modal-body').innerHTML = `
     ${ret.beskrivelse ? `<div class="detail-section"><h4>Beskrivelse</h4><p>${esc(ret.beskrivelse)}</p></div>` : ''}
+    ${ret.link ? `<div class="detail-section"><h4>Opskrift</h4><p><a href="${esc(normLink(ret.link))}" target="_blank" rel="noopener noreferrer" class="recipe-link">🔗 Åbn opskrift</a></p></div>` : ''}
     ${retPersoner.length ? `<div class="detail-section"><h4>Kan laves af</h4><div class="ing-list">${retPersoner.map(p=>`<span class="tag person">👤 ${esc(p.navn)}</span>`).join('')}</div></div>` : ''}
     ${ret.kategorier?.length ? `<div class="detail-section"><h4>Kategorier</h4><div class="ing-list">${ret.kategorier.map(k=>`<span class="tag kat">${esc(k)}</span>`).join('')}</div></div>` : ''}
     ${ret.ingredienser?.length

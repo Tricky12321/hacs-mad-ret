@@ -118,6 +118,7 @@ class MadPlannerRetterView(HomeAssistantView):
             "ingredienser": body.get("ingredienser", []),
             "kategorier": body.get("kategorier", []),
             "beskrivelse": body.get("beskrivelse", ""),
+            "link": body.get("link", ""),
             "personer": body.get("personer", []),
             "billeder": [],
         }
@@ -145,6 +146,7 @@ class MadPlannerRetView(HomeAssistantView):
                     "ingredienser": body.get("ingredienser", ret["ingredienser"]),
                     "kategorier": body.get("kategorier", ret["kategorier"]),
                     "beskrivelse": body.get("beskrivelse", ret.get("beskrivelse", "")),
+                    "link": body.get("link", ret.get("link", "")),
                     "personer": body.get("personer", ret.get("personer", [])),
                     "billeder": ret.get("billeder", []),
                 }

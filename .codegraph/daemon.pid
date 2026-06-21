@@ -1,6 +1,6 @@
 {
-  "pid": 14599,
-  "version": "0.9.9",
+  "pid": 249296,
+  "version": "1.0.1",
   "socketPath": "/home/tricky/Projects/hacs-mad-ret/.codegraph/daemon.sock",
-  "startedAt": 1781288015073
+  "startedAt": 1782053971448
 }
