@@ -213,6 +213,7 @@ let personer = [];
 let currentPage = 'soeg';
 let editingId = null;
 let soegPersonIds = [];
+let pendingSearchRestore = null;
 let retterSort = 'oprettet-ny';
 let personerSort = 'oprettet-ny';
 // ── Panel auth (received from HA panel web component via postMessage) ──
@@ -314,6 +315,22 @@ async function api(method, path, body) {
 // ── Utilities ─────────────────────────────────────────────────────────
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function normLink(url) { const u = String(url).trim(); return /^https?:\/\//i.test(u) ? u : 'https://' + u; }
+
+// ── Search persistence (query params survive refresh) ─────────────────
+function getSearchParams() {
+  const p = new URLSearchParams(location.search);
+  return { ing: p.getAll('ing'), kat: p.getAll('kat'), personer: p.getAll('personer'), tekst: p.get('tekst') || '' };
+}
+function saveSearchParams(ing, kat, personer, tekst='') {
+  const p = new URLSearchParams(location.search);
+  p.delete('ing'); p.delete('kat'); p.delete('personer'); p.delete('tekst');
+  ing.forEach(v => p.append('ing', v));
+  kat.forEach(v => p.append('kat', v));
+  personer.forEach(v => p.append('personer', v));
+  if (tekst) p.set('tekst', tekst);
+  const qs = p.toString();
+  history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+}
 
 function toast(msg, err=false) {
   const t = document.createElement('div');
@@ -557,7 +574,7 @@ async function loadAll() {
 function showPage(page) {
   currentPage = page;
   editingId = null;
-  if (page === 'soeg') soegPersonIds = [];
+  if (page === 'soeg') { soegPersonIds = []; pendingSearchRestore = null; saveSearchParams([], [], []); }
   updateNav();
   render();
 }
@@ -592,6 +609,10 @@ function render() {
       </div>
       <div class="search-bar">
         <h3>🔍 Søgefiltre</h3>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Fritekstsøgning</label>
+          <input type="text" id="soeg-tekst" placeholder="Søg i navn, beskrivelse, ingredienser og kategorier…" onkeydown="if(event.key==='Enter')doSearch()"/>
+        </div>
         <div class="search-row">
           <div class="form-group" style="margin:0">
             <label>Ingredienser</label>
@@ -617,6 +638,17 @@ function render() {
     const katWrap = createTagInput('Tilsæt kategori…', true, getAllKategorier);
     document.getElementById('soeg-ing-wrap').replaceWith(ingWrap); ingWrap.id = 'soeg-ing-wrap';
     document.getElementById('soeg-kat-wrap').replaceWith(katWrap); katWrap.id = 'soeg-kat-wrap';
+    if (pendingSearchRestore) {
+      ingWrap._setTags(pendingSearchRestore.ing);
+      katWrap._setTags(pendingSearchRestore.kat);
+      if (pendingSearchRestore.tekst) {
+        const ti = document.getElementById('soeg-tekst');
+        if (ti) ti.value = pendingSearchRestore.tekst;
+      }
+      const hadFilter = pendingSearchRestore.ing.length || pendingSearchRestore.kat.length || soegPersonIds.length || pendingSearchRestore.tekst;
+      pendingSearchRestore = null;
+      if (hadFilter) doSearch();
+    }
 
   } else if (currentPage === 'alle') {
     el.innerHTML = `
@@ -759,9 +791,12 @@ function togglePersonSearch(pid, el) {
 async function doSearch() {
   const ing = document.getElementById('soeg-ing-wrap')?._getTags?.() || [];
   const kat = document.getElementById('soeg-kat-wrap')?._getTags?.() || [];
+  const tekst = (document.getElementById('soeg-tekst')?.value || '').trim();
+  saveSearchParams(ing, kat, soegPersonIds, tekst);
   try {
-    const res = await api('POST', '/soeg', { ingredienser: ing, kategorier: kat, personer: soegPersonIds });
-    document.getElementById('soeg-results').innerHTML = renderCards(res, ing.length>0 || kat.length>0 || soegPersonIds.length>0);
+    const res = await api('POST', '/soeg', { ingredienser: ing, kategorier: kat, personer: soegPersonIds, tekst });
+    const hasFilter = ing.length > 0 || kat.length > 0 || soegPersonIds.length > 0 || tekst.length > 0;
+    document.getElementById('soeg-results').innerHTML = renderCards(res, hasFilter);
   } catch(e) { toast('Søgning fejlede', true); }
 }
 
@@ -867,6 +902,9 @@ function closeModal(e) {
     }, 30);
   });
   await loadAll();
+  // Restore search filters from URL query params (set by a previous search)
+  pendingSearchRestore = getSearchParams();
+  soegPersonIds = pendingSearchRestore.personer;
   document.getElementById('loading-overlay').style.display = 'none';
   document.getElementById('app').style.display = 'grid';
   render();

@@ -11,7 +11,8 @@ class MadPlanPanel extends HTMLElement {
     Object.assign(this.style, { display: 'block', width: '100%', height: '100%' });
     this._iframe = document.createElement('iframe');
     Object.assign(this._iframe.style, { width: '100%', height: '100%', border: 'none', display: 'block' });
-    this._iframe.src = '/mad-plan-static/index.html';
+    // Cache-bust so frontend updates appear on a plain browser refresh — no HA restart needed
+    this._iframe.src = '/mad-plan-static/index.html?v=' + Date.now();
     this.appendChild(this._iframe);
     this._iframe.addEventListener('load', () => this._send());
     window.addEventListener('message', this._onMsg);

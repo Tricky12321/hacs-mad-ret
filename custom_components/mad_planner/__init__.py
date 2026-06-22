@@ -191,15 +191,26 @@ class MadPlannerSoegView(HomeAssistantView):
         soeg_ing = [i.lower().strip() for i in body.get("ingredienser", [])]
         soeg_kat = [k.lower().strip() for k in body.get("kategorier", [])]
         soeg_personer = body.get("personer", [])
+        soeg_tekst = body.get("tekst", "").lower().strip()
 
         data = await self.hass.async_add_executor_job(load_data, self.hass)
         resultater = []
-        has_filter = bool(soeg_ing or soeg_kat or soeg_personer)
+        has_filter = bool(soeg_ing or soeg_kat or soeg_personer or soeg_tekst)
 
         for ret in data["retter"]:
             ret_ing = [i.lower().strip() for i in ret.get("ingredienser", [])]
             ret_kat = [k.lower().strip() for k in ret.get("kategorier", [])]
             ret_per = ret.get("personer", [])
+
+            if soeg_tekst:
+                searchable = " ".join([
+                    ret.get("navn", ""),
+                    ret.get("beskrivelse", ""),
+                    " ".join(ret.get("ingredienser", [])),
+                    " ".join(ret.get("kategorier", [])),
+                ]).lower()
+                if soeg_tekst not in searchable:
+                    continue
 
             ing_matches = sum(1 for i in soeg_ing if any(i in ri or ri in i for ri in ret_ing))
             kat_matches = sum(1 for k in soeg_kat if k in ret_kat)
@@ -208,7 +219,7 @@ class MadPlannerSoegView(HomeAssistantView):
 
             if not has_filter:
                 resultater.append({**ret, "matches": 0})
-            elif total > 0:
+            elif total > 0 or soeg_tekst:
                 resultater.append({**ret, "matches": total})
 
         resultater.sort(key=lambda x: x.get("matches", 0), reverse=True)
